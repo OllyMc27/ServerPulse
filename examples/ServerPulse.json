@@ -1,0 +1,46 @@
+{
+  "Enabled": true,
+  "EnableWebfrontDashboard": true,
+  "WebfrontMinimumPermission": "Moderator",
+  "TimeZone": "Europe/London",
+  "StateFilePath": "Configuration/ServerPulseData.json",
+  "PopulationSnapshotSeconds": 60,
+  "RawDataRetentionDays": 30,
+  "AggregateRetentionDays": 730,
+  "MaxSessions": 100000,
+  "MaxMapRounds": 25000,
+  "MaxPopulationSamples": 250000,
+  "MaxChatSignals": 25000,
+  "BounceThresholdSeconds": 120,
+  "ExcludeBots": true,
+  "AnonymizationSalt": "",
+  "StoreRawChat": false,
+  "StoreRedactedChatExcerpts": false,
+  "ChatExcerptMaximumLength": 100,
+  "EnableCountryAnalytics": true,
+  "MinimumCountrySampleSize": 3,
+  "EnableRecommendations": true,
+  "EnableOperationalMonitoring": true,
+  "Debug": false,
+  "ExcludedServers": [],
+  "ChatCategories": {
+    "Cheating": ["cheater", "cheating", "hacker", "hacking", "aimbot", "wallhack", "walls"],
+    "Lag": ["lag", "lagging", "latency", "packet loss", "rubber band", "connection interrupted"],
+    "Map": ["bad map", "hate this map", "change map", "skip map", "next map"],
+    "Mode": ["bad mode", "change mode", "game mode", "gamemode"],
+    "Bots": ["too many bots", "remove bots", "bot lobby", "bots are"],
+    "Balance": ["unbalanced", "team balance", "stacked team", "teams are stacked"],
+    "Spawns": ["bad spawns", "spawn trap", "spawn trapping", "spawn killed"],
+    "Admin": ["admin", "moderator", "need staff", "where are the admins"],
+    "Positive": ["good server", "great server", "nice server", "love this server", "gg"]
+  },
+  "ServerOverrides": {
+    "127.0.0.1:28960": {
+      "Enabled": true,
+      "TimeZone": "Europe/London",
+      "ExcludeBots": true,
+      "EnableChatAnalysis": true,
+      "EnableCountryAnalytics": true
+    }
+  }
+}

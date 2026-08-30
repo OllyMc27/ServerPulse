@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+outputs/
+Configuration/ServerPulseData.json
+Configuration/ServerPulseData.json.tmp
