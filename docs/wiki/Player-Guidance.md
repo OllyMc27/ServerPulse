@@ -4,6 +4,19 @@ Player Guidance is the optional ChatCheatMonitor-compatible module included in S
 
 It does **not** determine that a player is cheating and never issues punishment automatically.
 
+![ServerPulse Player Guidance](https://raw.githubusercontent.com/wiki/OllyMc27/ServerPulse/images/player-guidance.png)
+
+## What the page shows
+
+- Accusation signals detected in chat
+- Official reports observed after guidance
+- Report follow-through within the configured window
+- Repeatedly mentioned targets grouped by unique accusers
+- Category context such as aimbot, wallhack, tracking or movement
+- Privacy-safe guidance, report and staff-escalation events
+
+Distinct accusers matter more than raw message volume. Administrators should still review formal reports and evidence before taking action.
+
 ## Safe starter configuration
 
 ```json

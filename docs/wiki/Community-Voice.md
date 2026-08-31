@@ -2,6 +2,8 @@
 
 Community Voice answers a question that category totals cannot: **what were players actually saying?**
 
+![ServerPulse Community Voice](https://raw.githubusercontent.com/wiki/OllyMc27/ServerPulse/images/community-voice.png)
+
 ## How it works
 
 1. A human player sends a chat message.
@@ -17,8 +19,9 @@ Default categories cover cheating, lag, connection, stability, maps, modes, voti
 - **Complaint/request signals** excludes positive-only feedback.
 - **Positive feedback** shows messages matching the Positive category.
 - **Signals per 100 player-hours** normalises complaint volume against completed human playtime.
+- **Topic and server filters** reveal the exact redacted excerpts behind a change in counts.
 
-Use the topic and server filters to find the exact redacted excerpts behind a change in counts.
+Each excerpt includes the category, time, server, game, friendly map and mode, plus an anonymous player label. It is context for prioritising work—not a permanent chat archive.
 
 ## Negation handling
 
