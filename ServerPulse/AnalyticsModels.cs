@@ -2,13 +2,14 @@ namespace ServerPulse;
 
 public sealed class AnalyticsState
 {
-    public int SchemaVersion { get; set; } = 1;
+    public int SchemaVersion { get; set; } = 4;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
     public List<PlayerSessionRecord> Sessions { get; set; } = [];
     public List<MapRoundRecord> MapRounds { get; set; } = [];
     public List<PopulationSampleRecord> PopulationSamples { get; set; } = [];
     public List<ChatSignalRecord> ChatSignals { get; set; } = [];
+    public List<PlayerGuidanceEventRecord> PlayerGuidanceEvents { get; set; } = [];
     public List<ServerIncidentRecord> Incidents { get; set; } = [];
     public List<AnalyticsAnnotation> Annotations { get; set; } = [];
 }
@@ -68,9 +69,14 @@ public sealed class PopulationSampleRecord
 
 public sealed class ChatSignalRecord
 {
+    public string MessageId { get; set; } = string.Empty;
     public string ServerId { get; set; } = string.Empty;
     public string ServerName { get; set; } = string.Empty;
     public string Game { get; set; } = string.Empty;
+    public string Map { get; set; } = string.Empty;
+    public string Mode { get; set; } = string.Empty;
+    public string CountryCode { get; set; } = string.Empty;
+    public string CountryName { get; set; } = "Unknown";
     public string PlayerKey { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public DateTimeOffset CapturedAt { get; set; }
@@ -84,6 +90,30 @@ public sealed class ServerIncidentRecord
     public string Type { get; set; } = string.Empty;
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? ResolvedAt { get; set; }
+}
+
+public sealed class PlayerGuidanceEventRecord
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string MessageId { get; set; } = string.Empty;
+    public string EventType { get; set; } = "Accusation";
+    public string ServerId { get; set; } = string.Empty;
+    public string ServerName { get; set; } = string.Empty;
+    public string Game { get; set; } = string.Empty;
+    public string Map { get; set; } = string.Empty;
+    public string Mode { get; set; } = string.Empty;
+    public string CountryCode { get; set; } = string.Empty;
+    public string CountryName { get; set; } = "Unknown";
+    public string ReporterKey { get; set; } = string.Empty;
+    public string TargetKey { get; set; } = string.Empty;
+    public int? TargetClientId { get; set; }
+    public string TargetName { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Pattern { get; set; } = string.Empty;
+    public string Outcome { get; set; } = string.Empty;
+    public bool StaffAlertSent { get; set; }
+    public DateTimeOffset CapturedAt { get; set; }
+    public string? Excerpt { get; set; }
 }
 
 public sealed class AnalyticsAnnotation
@@ -101,6 +131,7 @@ public sealed record DashboardSnapshot(
     IReadOnlyList<MapRoundRecord> MapRounds,
     IReadOnlyList<PopulationSampleRecord> PopulationSamples,
     IReadOnlyList<ChatSignalRecord> ChatSignals,
+    IReadOnlyList<PlayerGuidanceEventRecord> PlayerGuidanceEvents,
     IReadOnlyList<ServerIncidentRecord> Incidents,
     IReadOnlyList<AnalyticsAnnotation> Annotations,
     int ActiveSessions,

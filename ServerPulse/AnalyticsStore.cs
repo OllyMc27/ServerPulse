@@ -40,6 +40,7 @@ public sealed class AnalyticsStore : IDisposable
                 _state = await JsonSerializer.DeserializeAsync<AnalyticsState>(stream, JsonOptions, token) ?? new AnalyticsState();
             }
 
+            _state.SchemaVersion = 4;
             Prune();
             LastError = null;
         }
@@ -61,6 +62,7 @@ public sealed class AnalyticsStore : IDisposable
                 _state.MapRounds.ToArray(),
                 _state.PopulationSamples.ToArray(),
                 _state.ChatSignals.ToArray(),
+                _state.PlayerGuidanceEvents.ToArray(),
                 _state.Incidents.ToArray(),
                 _state.Annotations.ToArray(),
                 activeSessions,
@@ -73,6 +75,7 @@ public sealed class AnalyticsStore : IDisposable
     public void AddMapRound(MapRoundRecord value) => Mutate(() => _state.MapRounds.Add(value));
     public void AddPopulationSample(PopulationSampleRecord value) => Mutate(() => _state.PopulationSamples.Add(value));
     public void AddChatSignals(IEnumerable<ChatSignalRecord> values) => Mutate(() => _state.ChatSignals.AddRange(values));
+    public void AddPlayerGuidanceEvent(PlayerGuidanceEventRecord value) => Mutate(() => _state.PlayerGuidanceEvents.Add(value));
     public void AddIncident(ServerIncidentRecord value) => Mutate(() => _state.Incidents.Add(value));
 
     public void ResolveIncident(string serverId, string type, DateTimeOffset resolvedAt) => Mutate(() =>
@@ -103,6 +106,7 @@ public sealed class AnalyticsStore : IDisposable
                 MapRounds = _state.MapRounds.ToList(),
                 PopulationSamples = _state.PopulationSamples.ToList(),
                 ChatSignals = _state.ChatSignals.ToList(),
+                PlayerGuidanceEvents = _state.PlayerGuidanceEvents.ToList(),
                 Incidents = _state.Incidents.ToList(),
                 Annotations = _state.Annotations.ToList()
             };
@@ -147,6 +151,8 @@ public sealed class AnalyticsStore : IDisposable
             _state.PopulationSamples = _state.PopulationSamples.Where(item => item.CapturedAt >= aggregateCutoff)
                 .TakeLast(Math.Max(5_000, _config.MaxPopulationSamples)).ToList();
             _state.ChatSignals = _state.ChatSignals.Where(item => item.CapturedAt >= rawCutoff)
+                .TakeLast(Math.Max(500, _config.MaxChatSignals)).ToList();
+            _state.PlayerGuidanceEvents = _state.PlayerGuidanceEvents.Where(item => item.CapturedAt >= rawCutoff)
                 .TakeLast(Math.Max(500, _config.MaxChatSignals)).ToList();
             _state.Incidents = _state.Incidents.Where(item => item.StartedAt >= aggregateCutoff).ToList();
             _state.Annotations = _state.Annotations.Where(item => item.OccurredAt >= aggregateCutoff).ToList();

@@ -13,6 +13,7 @@ public sealed class Plugin : IPluginV2
 {
     private readonly AnalyticsEngine _engine;
     private readonly ServerPulseWebfront _webfront;
+    private readonly PlayerGuidanceService _playerGuidance;
     private readonly ServerPulseConfig _config;
     private readonly IConfigurationHandlerV2<ServerPulseConfig> _configurationHandler;
     private readonly ILogger<Plugin> _logger;
@@ -28,6 +29,9 @@ public sealed class Plugin : IPluginV2
         services.AddConfiguration("ServerPulse", new ServerPulseConfig());
         services.AddSingleton<AnalyticsStore>();
         services.AddSingleton<ChatSignalClassifier>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<PlayerGuidanceDetectionEngine>();
+        services.AddSingleton<PlayerGuidanceService>();
         services.AddSingleton<RecommendationEngine>();
         services.AddSingleton<AnalyticsEngine>();
         services.AddSingleton<ServerPulseWebfront>();
@@ -36,12 +40,14 @@ public sealed class Plugin : IPluginV2
     public Plugin(
         AnalyticsEngine engine,
         ServerPulseWebfront webfront,
+        PlayerGuidanceService playerGuidance,
         ServerPulseConfig config,
         IConfigurationHandlerV2<ServerPulseConfig> configurationHandler,
         ILogger<Plugin> logger)
     {
         _engine = engine;
         _webfront = webfront;
+        _playerGuidance = playerGuidance;
         _config = config;
         _configurationHandler = configurationHandler;
         _logger = logger;
@@ -71,11 +77,15 @@ public sealed class Plugin : IPluginV2
             await _configurationHandler.Set(_config);
         await _engine.StartAsync(manager, token);
         Console.WriteLine($"[{Name}] by {Author} loaded. Version: {Version}");
-        Console.WriteLine($"[{Name}] analytics enabled: {_config.Enabled}; webfront: {_config.EnableWebfrontDashboard}; timezone: {AnalyticsTime.ConfigurationLabel}");
+        Console.WriteLine($"[{Name}] analytics enabled: {_config.Enabled}; webfront: {_config.EnableWebfrontDashboard}; player guidance: {_config.PlayerGuidance.Enabled}; timezone: {AnalyticsTime.ConfigurationLabel}");
     }
 
     private Task OnClientAuthorized(ClientStateAuthorizeEvent value, CancellationToken token) => _engine.ClientAuthorizedAsync(value, token);
-    private Task OnClientDisposed(ClientStateDisposeEvent value, CancellationToken token) => _engine.ClientDisposedAsync(value, token);
+    private Task OnClientDisposed(ClientStateDisposeEvent value, CancellationToken token)
+    {
+        _playerGuidance.RemoveClientCooldowns(value.Client.ClientId);
+        return _engine.ClientDisposedAsync(value, token);
+    }
     private Task OnPenalty(ClientPenaltyEvent value, CancellationToken token) => _engine.PenaltyAsync(value, token);
     private Task OnMatchStarted(MatchStartEvent value, CancellationToken token) => _engine.MatchStartedAsync(value, token);
     private Task OnMatchEnded(MatchEndEvent value, CancellationToken token) => _engine.MatchEndedAsync(value, token);
@@ -109,6 +119,26 @@ public sealed class Plugin : IPluginV2
         }
         config.ExcludedServers ??= [];
         config.ChatCategories ??= ServerPulseConfig.DefaultChatCategories();
+        config.PlayerGuidance ??= new PlayerGuidanceConfig();
+        config.PlayerGuidance.Categories ??= PlayerGuidanceConfig.DefaultCategories();
+        config.PlayerGuidance.ReminderMessages ??= PlayerGuidanceConfig.DefaultReminderMessages();
+        config.PlayerGuidance.ExcludedPhrases ??= [];
+        config.PlayerGuidance.CommunityReportPhrases ??= PlayerGuidanceConfig.DefaultCommunityReportPhrases();
+        config.PlayerGuidance.CommunityReportExclusions ??= [];
+        config.PlayerGuidance.ServerOverrides ??= new Dictionary<string, PlayerGuidanceServerOverride>(StringComparer.OrdinalIgnoreCase);
+        foreach (var category in config.PlayerGuidance.Categories)
+        {
+            category.Phrases ??= [];
+            category.RegexPatterns ??= [];
+            category.ReminderMessages ??= new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+        foreach (var serverOverride in config.PlayerGuidance.ServerOverrides.Values)
+            serverOverride.ExcludedPhrases ??= [];
+        if (config.PlayerGuidance.ServerOverrides.Comparer != StringComparer.OrdinalIgnoreCase)
+        {
+            config.PlayerGuidance.ServerOverrides = new Dictionary<string, PlayerGuidanceServerOverride>(config.PlayerGuidance.ServerOverrides, StringComparer.OrdinalIgnoreCase);
+            changed = true;
+        }
         config.ServerOverrides ??= new Dictionary<string, ServerPulseServerOverride>(StringComparer.OrdinalIgnoreCase);
         if (config.ServerOverrides.Comparer != StringComparer.OrdinalIgnoreCase)
         {
@@ -137,6 +167,7 @@ public sealed class Plugin : IPluginV2
         IGameServerEventSubscriptions.ConnectionInterrupted -= OnConnectionInterrupted;
         IGameServerEventSubscriptions.ConnectionRestored -= OnConnectionRestored;
         _webfront.Dispose();
+        _playerGuidance.Dispose();
         _engine.Dispose();
         _logger.LogInformation("[{Name}] unloaded", Name);
     }

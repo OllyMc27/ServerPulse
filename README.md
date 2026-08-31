@@ -1,68 +1,51 @@
-# ServerPulse
+# ServerPulse [![Release](https://img.shields.io/github/v/release/OllyMc27/ServerPulse?display_name=tag&style=flat-square)](https://github.com/OllyMc27/ServerPulse/releases/latest) [![Build](https://img.shields.io/github/actions/workflow/status/OllyMc27/ServerPulse/ci.yml?branch=main&style=flat-square&label=build)](https://github.com/OllyMc27/ServerPulse/actions/workflows/ci.yml) [![License](https://img.shields.io/github/license/OllyMc27/ServerPulse?style=flat-square)](LICENSE) ![Author](https://img.shields.io/badge/author-OllyMc27-2563eb?style=flat-square)
 
-**Privacy-friendly server analytics and growth insights for IW4MAdmin.**
+**Privacy-conscious server analytics, community insight and player-guidance tooling for IW4MAdmin.**
 
-ServerPulse turns normal IW4MAdmin events into a native webfront dashboard that helps server owners answer the questions that actually affect player traffic: when people play, which rotations keep them, where they come from, why they leave, and what they complain about.
+ServerPulse turns normal IW4MAdmin events into a native moderation and growth workspace. It shows where players join, what keeps them playing, which rotations lose them, what they are saying, and whether chat accusations become useful reports.
 
-## What it shows
+## Highlights
 
-- Live and historical human population, with bots counted separately
-- Top servers ranked by demand, retention, returning players and short sessions
-- Map and mode performance, including joins, leaves, peaks and population survival
-- Hour-by-hour and day-by-day activity heatmaps
-- Average session length, first-visit retention and disconnect reasons
-- Privacy-thresholded country analytics using IW4MAdmin's local geolocation service
-- Categorised chat signals for lag, maps, modes, cheating, balance, spawns and more
-- Practical opportunity cards with sample size and confidence
-- Native server monitoring, connection incidents and latency metrics when supported
-- Per-server collection, chat-analysis and country-analysis overrides
+- Human-only traffic, retention, returning-player and short-session comparisons
+- Map/mode performance, network activity heatmaps and disconnect outcomes
+- Country analytics with flags and configurable privacy thresholds
+- Redacted Community Voice excerpts across 33 configurable topics
+- Evidence-led recommendations with sample size and confidence
+- Optional Player Guidance with `!rep` reminders, target assistance and cooldowns
+- Distinct-accuser escalation, report follow-through and repeated-target review
+- Native IW4MAdmin styling, permissions, player-profile links and server telemetry
 
-Raw chat is **not stored by default**. Player identities are represented by installation-specific HMAC hashes, IP addresses are never written to the analytics file, bots can be excluded, and small country samples are hidden.
+Raw chat is **not stored by default**. IP addresses are never written to ServerPulse data, general player identities are pseudonymised, and small country samples are hidden.
 
 ## Install
 
-1. Download `ServerPulse.dll` from the latest release.
+1. Download `ServerPulse.dll` from the [latest release](https://github.com/OllyMc27/ServerPulse/releases/latest).
 2. Copy it to `IW4MAdmin/Plugins`.
-3. Start IW4MAdmin once to generate `Configuration/ServerPulse.json`.
-4. Restart IW4MAdmin after changing the configuration.
-5. Open **Admin → ServerPulse** in the webfront.
+3. Start IW4MAdmin to generate `Configuration/ServerPulse.json`.
+4. Review the configuration, restart IW4MAdmin, then open **Admin → ServerPulse**.
 
-ServerPulse targets .NET 10 and the current IW4MAdmin plugin lifecycle.
+If enabling Player Guidance, remove `ChatCheatMonitor.dll` first to prevent duplicate reminders.
 
-## Dashboard
+## Workspace
 
-The initial dashboard contains eight focused views:
-
-| View | Purpose |
+| View | Answers |
 | --- | --- |
-| Overview | Network KPIs and the highest-priority opportunities |
-| Servers | Compare traffic, session quality, returns and bounce rate |
-| Maps & modes | Find rotations that gain or lose players |
-| Activity | See the strongest hours and quiet gaps |
-| Audience | Understand privacy-safe regional demand |
-| Chat signals | Track recurring complaints and positive feedback |
-| Recommendations | Turn collected evidence into suggested actions |
-| Data health | Check live samples, storage, incidents and latency |
+| Traffic & retention | Which servers attract players and bring them back? |
+| Rotation performance | Which map/mode combinations gain or lose population? |
+| Busy times & exits | When is the network busiest and why do sessions end? |
+| Player audience | Which privacy-safe regions and join times lead demand? |
+| Community Voice | What are players actually complaining about or praising? |
+| Player Guidance | Do accusations turn into proper reports, and who is repeatedly mentioned? |
+| Action plan | Which changes deserve a measured experiment? |
+| Data health | Is collection, storage and live telemetry operating correctly? |
 
-## Configuration
+## Documentation
 
-A complete example is available at [`examples/ServerPulse.json`](examples/ServerPulse.json). The most important privacy options are:
+The [ServerPulse wiki](https://github.com/OllyMc27/ServerPulse/wiki) contains the complete setup, configuration, dashboard, privacy, Player Guidance and troubleshooting guides. A full copy-ready configuration is also available in [`examples/ServerPulse.json`](examples/ServerPulse.json).
 
-```json
-{
-  "StoreRawChat": false,
-  "StoreRedactedChatExcerpts": false,
-  "EnableCountryAnalytics": true,
-  "MinimumCountrySampleSize": 3,
-  "ExcludeBots": true
-}
-```
+## Compatibility
 
-Analytics are stored in `Configuration/ServerPulseData.json`. Back this file up if you want to preserve history during a migration. Deleting it resets ServerPulse analytics without affecting IW4MAdmin data.
-
-## Current status
-
-Version 0.1.0 is the first public preview. It is ready for test servers, but recommendations become more useful after several days of representative traffic.
+ServerPulse v1.0.1 targets .NET 10 and the current IW4MAdmin plugin lifecycle. Player Guidance is disabled by default, so upgrading never begins messaging players until an owner opts in.
 
 ## License
 

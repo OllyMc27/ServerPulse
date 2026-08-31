@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Data.Models;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
@@ -18,6 +19,7 @@ public sealed class AnalyticsEngine : IDisposable
     private readonly ServerPulseConfig _config;
     private readonly AnalyticsStore _store;
     private readonly ChatSignalClassifier _classifier;
+    private readonly PlayerGuidanceService _playerGuidance;
     private readonly IGeoLocationService _geoLocation;
     private readonly ILogger<AnalyticsEngine> _logger;
     private readonly ConcurrentDictionary<string, PlayerSessionRecord> _activeSessions = new();
@@ -31,12 +33,14 @@ public sealed class AnalyticsEngine : IDisposable
         ServerPulseConfig config,
         AnalyticsStore store,
         ChatSignalClassifier classifier,
+        PlayerGuidanceService playerGuidance,
         IGeoLocationService geoLocation,
         ILogger<AnalyticsEngine> logger)
     {
         _config = config;
         _store = store;
         _classifier = classifier;
+        _playerGuidance = playerGuidance;
         _geoLocation = geoLocation;
         _logger = logger;
     }
@@ -79,7 +83,7 @@ public sealed class AnalyticsEngine : IDisposable
         {
             PlayerKey = PlayerKey(client),
             ServerId = server.Id,
-            ServerName = server.ServerName,
+            ServerName = CleanDisplayText(server.ServerName),
             Game = server.GameCode.ToString(),
             Map = FriendlyMap(server),
             Mode = FriendlyMode(server.Gametype),
@@ -134,7 +138,7 @@ public sealed class AnalyticsEngine : IDisposable
         _activeRounds[matchEvent.Server.Id] = new MapRoundRecord
         {
             ServerId = matchEvent.Server.Id,
-            ServerName = matchEvent.Server.ServerName,
+            ServerName = CleanDisplayText(matchEvent.Server.ServerName),
             Game = matchEvent.Server.GameCode.ToString(),
             Map = FriendlyMap(matchEvent.Server),
             Mode = FriendlyMode(matchEvent.Server.Gametype),
@@ -179,28 +183,47 @@ public sealed class AnalyticsEngine : IDisposable
         return Task.CompletedTask;
     }
 
-    public Task ChatAsync(ClientMessageEvent messageEvent, CancellationToken token)
+    public async Task ChatAsync(ClientMessageEvent messageEvent, CancellationToken token)
     {
-        if (!ShouldTrack(messageEvent.Server, messageEvent.Client) || !ChatEnabled(messageEvent.Server.Id))
-            return Task.CompletedTask;
-        var categories = _classifier.Classify(messageEvent.Message);
-        if (categories.Count == 0)
-            return Task.CompletedTask;
+        if (!ShouldTrack(messageEvent.Server, messageEvent.Client))
+            return;
 
+        _activeSessions.TryGetValue(SessionKey(messageEvent.Server.Id, messageEvent.Client), out var activeSession);
+        var messageId = Guid.NewGuid().ToString("N");
         var excerpt = _config.StoreRawChat
             ? Truncate(messageEvent.Message, Math.Clamp(_config.ChatExcerptMaximumLength, 20, 250))
             : _classifier.Excerpt(messageEvent.Message);
-        _store.AddChatSignals(categories.Select(category => new ChatSignalRecord
+        if (ChatEnabled(messageEvent.Server.Id))
         {
-            ServerId = messageEvent.Server.Id,
-            ServerName = messageEvent.Server.ServerName,
-            Game = messageEvent.Server.GameCode.ToString(),
-            PlayerKey = PlayerKey(messageEvent.Client),
-            Category = category,
-            CapturedAt = messageEvent.CreatedAt,
-            Excerpt = excerpt
-        }));
-        return Task.CompletedTask;
+            var categories = _classifier.Classify(messageEvent.Message);
+            if (categories.Count > 0)
+            {
+                _store.AddChatSignals(categories.Select(category => new ChatSignalRecord
+                {
+                    MessageId = messageId,
+                    ServerId = messageEvent.Server.Id,
+                    ServerName = CleanDisplayText(messageEvent.Server.ServerName),
+                    Game = messageEvent.Server.GameCode.ToString(),
+                    Map = FriendlyMap(messageEvent.Server),
+                    Mode = FriendlyMode(messageEvent.Server.Gametype),
+                    CountryCode = activeSession?.CountryCode ?? string.Empty,
+                    CountryName = activeSession?.CountryName ?? "Unknown",
+                    PlayerKey = PlayerKey(messageEvent.Client),
+                    Category = category,
+                    CapturedAt = messageEvent.CreatedAt,
+                    Excerpt = excerpt
+                }));
+            }
+        }
+
+        await _playerGuidance.HandleAsync(
+            messageEvent,
+            messageId,
+            PlayerKey(messageEvent.Client),
+            PlayerKey,
+            activeSession,
+            excerpt,
+            token);
     }
 
     public Task MonitoringStartedAsync(MonitorStartEvent serverEvent, CancellationToken token)
@@ -215,7 +238,7 @@ public sealed class AnalyticsEngine : IDisposable
         _store.AddIncident(new ServerIncidentRecord
         {
             ServerId = serverEvent.Server.Id,
-            ServerName = serverEvent.Server.ServerName,
+            ServerName = CleanDisplayText(serverEvent.Server.ServerName),
             Type = "Monitoring stopped",
             StartedAt = serverEvent.CreatedAt
         });
@@ -227,7 +250,7 @@ public sealed class AnalyticsEngine : IDisposable
         _store.AddIncident(new ServerIncidentRecord
         {
             ServerId = serverEvent.Server.Id,
-            ServerName = serverEvent.Server.ServerName,
+            ServerName = CleanDisplayText(serverEvent.Server.ServerName),
             Type = "Connection interrupted",
             StartedAt = serverEvent.CreatedAt
         });
@@ -256,7 +279,7 @@ public sealed class AnalyticsEngine : IDisposable
                 _store.AddPopulationSample(new PopulationSampleRecord
                 {
                     ServerId = server.Id,
-                    ServerName = server.ServerName,
+                    ServerName = CleanDisplayText(server.ServerName),
                     Game = server.GameCode.ToString(),
                     Map = FriendlyMap(server),
                     Mode = FriendlyMode(server.Gametype),
@@ -332,6 +355,14 @@ public sealed class AnalyticsEngine : IDisposable
 
     private static string FriendlyMap(IGameServer server) =>
         string.IsNullOrWhiteSpace(server.Map?.Alias) ? server.Map?.Name ?? "Unknown" : server.Map.Alias;
+
+    public static string CleanDisplayText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "Unknown";
+        var withoutColours = Regex.Replace(value, @"\^[0-9]", string.Empty);
+        return Regex.Replace(withoutColours, @"[\u0000-\u001f]+", " ").Trim();
+    }
 
     public static string FriendlyMode(string? mode) => (mode ?? string.Empty).ToLowerInvariant() switch
     {
