@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SharedLibraryCore;
@@ -27,6 +28,10 @@ public sealed class Plugin : IPluginV2
     public static void RegisterDependencies(IServiceCollection services)
     {
         services.AddConfiguration("ServerPulse", new ServerPulseConfig());
+        services.AddAntiforgery();
+        services.AddHttpContextAccessor();
+        services.AddSingleton<IStartupFilter, GuidanceAdminEndpointStartupFilter>();
+        services.AddSingleton<DemosToDiscordIntegrationClient>();
         services.AddSingleton<AnalyticsStore>();
         services.AddSingleton<ChatSignalClassifier>();
         services.AddSingleton(TimeProvider.System);
@@ -126,6 +131,15 @@ public sealed class Plugin : IPluginV2
         config.PlayerGuidance.CommunityReportPhrases ??= PlayerGuidanceConfig.DefaultCommunityReportPhrases();
         config.PlayerGuidance.CommunityReportExclusions ??= [];
         config.PlayerGuidance.ServerOverrides ??= new Dictionary<string, PlayerGuidanceServerOverride>(StringComparer.OrdinalIgnoreCase);
+        var contextBefore = Math.Clamp(config.PlayerGuidance.ReviewContextBeforeSeconds, 5, 600);
+        var contextAfter = Math.Clamp(config.PlayerGuidance.ReviewContextAfterSeconds, 0, 300);
+        var contextMaximum = Math.Clamp(config.PlayerGuidance.ReviewContextMaximumMessages, 5, 100);
+        changed |= contextBefore != config.PlayerGuidance.ReviewContextBeforeSeconds;
+        changed |= contextAfter != config.PlayerGuidance.ReviewContextAfterSeconds;
+        changed |= contextMaximum != config.PlayerGuidance.ReviewContextMaximumMessages;
+        config.PlayerGuidance.ReviewContextBeforeSeconds = contextBefore;
+        config.PlayerGuidance.ReviewContextAfterSeconds = contextAfter;
+        config.PlayerGuidance.ReviewContextMaximumMessages = contextMaximum;
         foreach (var category in config.PlayerGuidance.Categories)
         {
             category.Phrases ??= [];

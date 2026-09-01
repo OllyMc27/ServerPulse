@@ -50,6 +50,6 @@ The [ServerPulse wiki](https://github.com/OllyMc27/ServerPulse/wiki) contains in
 
 ## Companion plugin
 
-Need match demos and a staff case-review workflow as well? [DemosToDiscord](https://github.com/OllyMc27/DemosToDiscord) captures IW4MAdmin report and ban evidence, delivers demos to Discord and provides a native cheating-case review workspace. It complements ServerPulse without being required for analytics.
+Need match demos and a staff case-review workflow as well? [DemosToDiscord](https://github.com/OllyMc27/DemosToDiscord) captures IW4MAdmin evidence, delivers demos to Discord and provides a native case-review workspace. With both current plugins loaded, an administrator can resolve an otherwise ambiguous Player Guidance signal and create a proactive human-review case directly from ServerPulse.
 
-ServerPulse v1.0.1 targets .NET 10 and the current IW4MAdmin plugin lifecycle. Licensed under the [MIT License](LICENSE).
+ServerPulse v1.1.0 targets .NET 10 and the current IW4MAdmin plugin lifecycle. Licensed under the [MIT License](LICENSE).

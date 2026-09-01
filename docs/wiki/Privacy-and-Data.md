@@ -22,7 +22,7 @@ ServerPulse is designed to provide operational value without creating an unneces
 
 General analytics use an HMAC pseudonym derived from the IW4MAdmin identity and the installation's `AnonymizationSalt`. This supports repeat/retention analysis without writing the source identifier.
 
-Player Guidance is an administrative workflow. When an accusation uniquely resolves an online target, the target's cleaned display name and IW4MAdmin client ID are retained temporarily so staff can open the correct profile. This data follows raw retention.
+Player Guidance is an administrative workflow. When enabled, it retains the target's cleaned display name, IW4MAdmin client/network IDs and review status. `RetainAdminReviewContext` also keeps a bounded admin-only snapshot of nearby chat and the players present when an accusation was captured. This is deliberately separate from general Community Voice storage and follows raw retention.
 
 ## Redaction
 

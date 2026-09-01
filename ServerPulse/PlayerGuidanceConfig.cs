@@ -49,6 +49,11 @@ public sealed class PlayerGuidanceConfig
     public bool EnableLeetNormalization { get; set; } = true;
     public bool EnableTargetAssistance { get; set; } = true;
     public int MinimumTargetNameLength { get; set; } = 3;
+    public bool RetainAdminReviewContext { get; set; } = true;
+    public int ReviewContextBeforeSeconds { get; set; } = 60;
+    public int ReviewContextAfterSeconds { get; set; } = 30;
+    public int ReviewContextMaximumMessages { get; set; } = 20;
+    public bool EnableDemosToDiscordEscalation { get; set; } = true;
     public int MaxMessageLength { get; set; } = 140;
     public string DefaultLanguage { get; set; } = "en";
     public bool NotifyStaff { get; set; }

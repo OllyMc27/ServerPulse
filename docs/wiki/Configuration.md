@@ -58,7 +58,17 @@ Country data comes from IW4MAdmin's local geolocation service. IP addresses are 
 
 ## Chat categories
 
-`ChatCategories` maps a display category to a list of phrases. Matching is case-insensitive and supports multi-category messages. Review the complete example before replacing the defaults; v1.0.1 includes 33 categories.
+`ChatCategories` maps a display category to a list of phrases. Matching is case-insensitive and supports multi-category messages. Review the complete example before replacing the defaults; the current defaults include 33 categories.
+
+## Player Guidance review context and case handoff
+
+| Setting | Default | Purpose |
+| --- | ---: | --- |
+| `RetainAdminReviewContext` | `true` | Retains a bounded admin-only chat/player snapshot around guidance signals |
+| `ReviewContextBeforeSeconds` | `60` | Chat window retained before the triggering message; clamped to 5–600 |
+| `ReviewContextAfterSeconds` | `30` | Chat window appended after the triggering message; clamped to 0–300 |
+| `ReviewContextMaximumMessages` | `20` | Maximum retained messages per signal; clamped to 5–100 |
+| `EnableDemosToDiscordEscalation` | `true` | Shows the manual resolve-and-create-case action when compatible DemosToDiscord is loaded |
 
 ## Per-server analytics overrides
 

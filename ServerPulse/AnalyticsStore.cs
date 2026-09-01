@@ -40,7 +40,14 @@ public sealed class AnalyticsStore : IDisposable
                 _state = await JsonSerializer.DeserializeAsync<AnalyticsState>(stream, JsonOptions, token) ?? new AnalyticsState();
             }
 
-            _state.SchemaVersion = 4;
+            _state.SchemaVersion = 5;
+            foreach (var item in _state.PlayerGuidanceEvents)
+            {
+                item.ContextMessages ??= [];
+                item.PlayersAtCapture ??= [];
+                if (string.IsNullOrWhiteSpace(item.ReviewStatus))
+                    item.ReviewStatus = item.TargetClientId.HasValue ? "AutomaticallyResolved" : "Unresolved";
+            }
             Prune();
             LastError = null;
         }
@@ -76,6 +83,58 @@ public sealed class AnalyticsStore : IDisposable
     public void AddPopulationSample(PopulationSampleRecord value) => Mutate(() => _state.PopulationSamples.Add(value));
     public void AddChatSignals(IEnumerable<ChatSignalRecord> values) => Mutate(() => _state.ChatSignals.AddRange(values));
     public void AddPlayerGuidanceEvent(PlayerGuidanceEventRecord value) => Mutate(() => _state.PlayerGuidanceEvents.Add(value));
+    public PlayerGuidanceEventRecord? GetPlayerGuidanceEvent(string id)
+    {
+        lock (_gate)
+        {
+            var value = _state.PlayerGuidanceEvents.FirstOrDefault(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            return value is null ? null : Clone(value);
+        }
+    }
+
+    public bool UpdatePlayerGuidanceEvent(string id, Action<PlayerGuidanceEventRecord> update)
+    {
+        var updated = false;
+        Mutate(() =>
+        {
+            var value = _state.PlayerGuidanceEvents.FirstOrDefault(item => item.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
+            if (value is null)
+                return;
+            update(value);
+            updated = true;
+        });
+        return updated;
+    }
+
+    public void AppendPlayerGuidanceContext(
+        string serverId,
+        GuidanceContextMessageRecord message,
+        TimeSpan afterWindow,
+        int maximumMessages)
+    {
+        var changed = false;
+        lock (_gate)
+        {
+            foreach (var item in _state.PlayerGuidanceEvents.Where(item =>
+                         item.EventType.Equals("Accusation", StringComparison.OrdinalIgnoreCase) &&
+                         item.ServerId.Equals(serverId, StringComparison.OrdinalIgnoreCase) &&
+                         message.CapturedAt >= item.CapturedAt &&
+                         message.CapturedAt - item.CapturedAt <= afterWindow))
+            {
+                item.ContextMessages ??= [];
+                if (item.ContextMessages.Any(value => value.MessageId.Equals(message.MessageId, StringComparison.Ordinal)))
+                    continue;
+                item.ContextMessages.Add(message);
+                if (item.ContextMessages.Count > maximumMessages)
+                    item.ContextMessages = item.ContextMessages.TakeLast(maximumMessages).ToList();
+                changed = true;
+            }
+            if (changed)
+                _dirty = true;
+        }
+        if (changed)
+            _saveTimer.Change(TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
+    }
     public void AddIncident(ServerIncidentRecord value) => Mutate(() => _state.Incidents.Add(value));
 
     public void ResolveIncident(string serverId, string type, DateTimeOffset resolvedAt) => Mutate(() =>
@@ -169,6 +228,9 @@ public sealed class AnalyticsStore : IDisposable
         }
         _saveTimer.Change(TimeSpan.FromSeconds(2), Timeout.InfiniteTimeSpan);
     }
+
+    private static PlayerGuidanceEventRecord Clone(PlayerGuidanceEventRecord value) =>
+        JsonSerializer.Deserialize<PlayerGuidanceEventRecord>(JsonSerializer.Serialize(value, JsonOptions), JsonOptions)!;
 
     private string ResolvePath() => Path.GetFullPath(_config.StateFilePath, Directory.GetCurrentDirectory());
 

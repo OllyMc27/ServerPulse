@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+
+- Added conservative unique partial-name resolution for Player Guidance; ambiguous fragments remain unresolved.
+- Added bounded admin-only surrounding chat and player-at-capture snapshots for unresolved signals.
+- Added administrator resolve, dismiss, retry and resolve-and-create-case controls with anti-forgery and permission checks.
+- Added optional process-local DemosToDiscord handoff for human-reviewed proactive evidence cases.
+- Added executable coverage for partial matching, ambiguity safeguards and retained review state.
+
 ## 1.0.1
 
 - Integrated ChatCheatMonitor as an optional, disabled-by-default Player guidance module.

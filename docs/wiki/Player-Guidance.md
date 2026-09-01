@@ -1,6 +1,6 @@
 # Player Guidance
 
-Player Guidance is the optional ChatCheatMonitor-compatible module included in ServerPulse v1.0.1. It recognises likely accusations, helps the sender use IW4MAdmin's official report command and measures whether that reminder led to a report.
+Player Guidance is the optional ChatCheatMonitor-compatible module included in ServerPulse. It recognises likely accusations, helps the sender use IW4MAdmin's official report command and measures whether that reminder led to a report.
 
 It does **not** determine that a player is cheating and never issues punishment automatically.
 
@@ -14,6 +14,8 @@ It does **not** determine that a player is cheating and never issues punishment 
 - Repeatedly mentioned targets grouped by unique accusers
 - Category context such as aimbot, wallhack, tracking or movement
 - Privacy-safe guidance, report and staff-escalation events
+- Admin review of unresolved signals with bounded surrounding chat and the players present at capture time
+- Optional one-click escalation of a manually resolved signal into DemosToDiscord
 
 Distinct accusers matter more than raw message volume. Administrators should still review formal reports and evidence before taking action.
 
@@ -31,6 +33,11 @@ Distinct accusers matter more than raw message volume. Administrators should sti
   "EnableLeetNormalization": true,
   "EnableTargetAssistance": true,
   "MinimumTargetNameLength": 3,
+  "RetainAdminReviewContext": true,
+  "ReviewContextBeforeSeconds": 60,
+  "ReviewContextAfterSeconds": 30,
+  "ReviewContextMaximumMessages": 20,
+  "EnableDemosToDiscordEscalation": true,
   "NotifyStaff": false
 }
 ```
@@ -45,7 +52,18 @@ Exclusion phrases prevent known benign messages from triggering. Invalid regular
 
 ## Target assistance
 
-ServerPulse tries to resolve an online target from the accusation or the first argument of `!rep`. Names and numeric IW4MAdmin client IDs are supported. Ambiguous name matches remain unresolved rather than guessing. Bots are not eligible when `ExcludeBots` is enabled.
+ServerPulse first looks for a complete online name, then accepts a partial fragment such as `slc` only when it identifies exactly one eligible player. Names and numeric IW4MAdmin client IDs are supported by `!rep`. Ambiguous partials remain unresolved rather than guessing. Bots and the accusing player are not eligible targets.
+
+## Resolving an unresolved signal
+
+Open the signal under **Admin → ServerPulse → Player guidance**. The review panel shows the configured chat window and the non-bot players who were in the match when the signal was captured. An administrator can:
+
+- resolve the target without creating a case;
+- resolve and create a DemosToDiscord proactive-review case;
+- retry a failed DemosToDiscord handoff; or
+- dismiss the signal with an optional note.
+
+The target, reviewer, status, notes and resulting DemosToDiscord case ID are retained with the event. DemosToDiscord must be installed and its `AcceptServerPulseCases` setting enabled for case creation.
 
 ## Response modes
 
@@ -75,4 +93,4 @@ Repeated messages from one person cannot satisfy the threshold. The default thre
 
 ## Retained guidance data
 
-Guidance events retain the category, matched rule, response outcome, server/rotation context, pseudonymous reporter, resolved target identifier/display name and optional redacted excerpt. They follow `RawDataRetentionDays`.
+Guidance events retain the category, matched rule, response outcome, server/rotation context, pseudonymous reporter, resolved target identifier/display name and optional redacted excerpt. When `RetainAdminReviewContext` is enabled, an admin-only bounded snapshot also retains nearby chat, cleaned speaker names and the players present at capture time. These records follow `RawDataRetentionDays`.

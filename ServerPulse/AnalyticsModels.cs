@@ -2,7 +2,7 @@ namespace ServerPulse;
 
 public sealed class AnalyticsState
 {
-    public int SchemaVersion { get; set; } = 4;
+    public int SchemaVersion { get; set; } = 5;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
     public List<PlayerSessionRecord> Sessions { get; set; } = [];
@@ -99,6 +99,7 @@ public sealed class PlayerGuidanceEventRecord
     public string EventType { get; set; } = "Accusation";
     public string ServerId { get; set; } = string.Empty;
     public string ServerName { get; set; } = string.Empty;
+    public long? LegacyServerId { get; set; }
     public string Game { get; set; } = string.Empty;
     public string Map { get; set; } = string.Empty;
     public string Mode { get; set; } = string.Empty;
@@ -107,13 +108,44 @@ public sealed class PlayerGuidanceEventRecord
     public string ReporterKey { get; set; } = string.Empty;
     public string TargetKey { get; set; } = string.Empty;
     public int? TargetClientId { get; set; }
+    public long? TargetNetworkId { get; set; }
     public string TargetName { get; set; } = string.Empty;
+    public string ResolutionMethod { get; set; } = string.Empty;
+    public string ReviewStatus { get; set; } = "Unresolved";
+    public int? ResolvedByClientId { get; set; }
+    public string ResolvedByName { get; set; } = string.Empty;
+    public DateTimeOffset? ResolvedAt { get; set; }
+    public string ReviewNotes { get; set; } = string.Empty;
+    public string DemosToDiscordCaseId { get; set; } = string.Empty;
+    public string DemosToDiscordError { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Pattern { get; set; } = string.Empty;
     public string Outcome { get; set; } = string.Empty;
     public bool StaffAlertSent { get; set; }
     public DateTimeOffset CapturedAt { get; set; }
     public string? Excerpt { get; set; }
+    public List<GuidanceContextMessageRecord> ContextMessages { get; set; } = [];
+    public List<GuidancePlayerSnapshotRecord> PlayersAtCapture { get; set; } = [];
+}
+
+public sealed class GuidanceContextMessageRecord
+{
+    public string MessageId { get; set; } = string.Empty;
+    public DateTimeOffset CapturedAt { get; set; }
+    public int ClientId { get; set; }
+    public string PlayerKey { get; set; } = string.Empty;
+    public string PlayerName { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public bool IsTeamMessage { get; set; }
+}
+
+public sealed class GuidancePlayerSnapshotRecord
+{
+    public int ClientId { get; set; }
+    public long NetworkId { get; set; }
+    public string PlayerKey { get; set; } = string.Empty;
+    public string PlayerName { get; set; } = string.Empty;
+    public bool IsBot { get; set; }
 }
 
 public sealed class AnalyticsAnnotation

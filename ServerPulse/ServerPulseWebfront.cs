@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Http;
 using SharedLibraryCore.Helpers;
 using SharedLibraryCore.Interfaces;
 
@@ -32,6 +34,8 @@ public sealed class ServerPulseWebfront : IDisposable
     private readonly AnalyticsEngine _engine;
     private readonly RecommendationEngine _recommendations;
     private readonly PlayerGuidanceService _playerGuidance;
+    private readonly IAntiforgery _antiforgery;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private bool _disposed;
 
     public ServerPulseWebfront(
@@ -40,7 +44,9 @@ public sealed class ServerPulseWebfront : IDisposable
         ServerPulseConfig config,
         AnalyticsEngine engine,
         RecommendationEngine recommendations,
-        PlayerGuidanceService playerGuidance)
+        PlayerGuidanceService playerGuidance,
+        IAntiforgery antiforgery,
+        IHttpContextAccessor httpContextAccessor)
     {
         _interactions = interactions;
         _configurationHandler = configurationHandler;
@@ -48,6 +54,8 @@ public sealed class ServerPulseWebfront : IDisposable
         _engine = engine;
         _recommendations = recommendations;
         _playerGuidance = playerGuidance;
+        _antiforgery = antiforgery;
+        _httpContextAccessor = httpContextAccessor;
         _configurationHandler.Updated += OnConfigurationUpdated;
     }
 
@@ -452,15 +460,75 @@ public sealed class ServerPulseWebfront : IDisposable
             var targetDisplay = item.TargetClientId.HasValue
                 ? $"<a href=\"/Client/Profile/{item.TargetClientId.Value}\" class=\"text-sm font-semibold text-primary hover:underline\">{targetLabel}</a>"
                 : $"<strong class=\"text-sm text-foreground\">{targetLabel}</strong>";
-            builder.Append($"<article class=\"px-5 py-4 hover:bg-surface-hover/20\"><div class=\"flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between\"><div class=\"flex flex-wrap items-center gap-2\">{Badge(isReport ? "Official report" : item.Category, isReport ? "green" : "amber")}{(item.StaffAlertSent ? Badge("Staff alerted", "red") : string.Empty)}{targetDisplay}</div><time class=\"text-xs text-muted\">{E(AnalyticsTime.Display(item.CapturedAt))}</time></div>");
+            var reviewBadge = isReport ? string.Empty : ReviewBadge(item.ReviewStatus);
+            builder.Append($"<article class=\"px-5 py-4 hover:bg-surface-hover/20\"><div class=\"flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between\"><div class=\"flex flex-wrap items-center gap-2\">{Badge(isReport ? "Official report" : item.Category, isReport ? "green" : "amber")}{reviewBadge}{(item.StaffAlertSent ? Badge("Staff alerted", "red") : string.Empty)}{targetDisplay}</div><time class=\"text-xs text-muted\">{E(AnalyticsTime.Display(item.CapturedAt))}</time></div>");
             if (!string.IsNullOrWhiteSpace(item.Excerpt))
                 builder.Append($"<blockquote class=\"sp-quote mt-3 bg-surface-alt/20 px-4 py-3 text-sm text-foreground\">“{E(item.Excerpt)}”</blockquote>");
             builder.Append($"<div class=\"mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted\"><span><i class=\"ph ph-hard-drives\"></i> {E(item.ServerName)}</span><span><i class=\"ph ph-map-trifold\"></i> {E(item.Map)} · {E(item.Mode)}</span><span><i class=\"ph ph-crosshair\"></i> rule: {E(item.Pattern)}</span><span><i class=\"ph ph-info\"></i> {E(item.Outcome)}</span>");
             if (ValidCountryCode(item.CountryCode)) builder.Append($"<span title=\"{E(item.CountryName)}\">{CountryFlag(item.CountryCode)} {E(item.CountryName)}</span>");
-            builder.Append("</div></article>");
+            builder.Append("</div>");
+            if (!isReport && (item.ReviewStatus is "Unresolved" or "CaseFailed"))
+                builder.Append(GuidanceReviewControls(item));
+            else if (!string.IsNullOrWhiteSpace(item.DemosToDiscordCaseId))
+                builder.Append($"<div class=\"mt-3 text-xs text-muted\">DemosToDiscord case <strong class=\"text-foreground\">{E(item.DemosToDiscordCaseId)}</strong> created by {E(item.ResolvedByName)}.</div>");
+            builder.Append("</article>");
         }
         return builder.Append("</div></section>").ToString();
     }
+
+    private string GuidanceReviewControls(PlayerGuidanceEventRecord item)
+    {
+        var token = AntiForgeryField();
+        var builder = new StringBuilder("<details class=\"mt-4 rounded-lg border border-line bg-surface-alt/20\"><summary class=\"cursor-pointer px-4 py-3 text-sm font-semibold text-foreground\">Review unresolved signal and match context</summary><div class=\"space-y-4 border-t border-line p-4\">");
+        if (!string.IsNullOrWhiteSpace(item.DemosToDiscordError))
+            builder.Append($"<div class=\"rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300\">Case handoff failed: {E(item.DemosToDiscordError)}</div>");
+
+        builder.Append("<div><h4 class=\"text-xs font-bold uppercase tracking-wide text-muted\">Chat around the signal</h4><div class=\"mt-2 divide-y divide-line overflow-hidden rounded-lg border border-line\">");
+        if (item.ContextMessages.Count == 0)
+            builder.Append("<div class=\"p-3 text-sm text-muted\">No surrounding chat was retained for this event.</div>");
+        foreach (var message in item.ContextMessages.OrderBy(value => value.CapturedAt))
+            builder.Append($"<div class=\"flex gap-3 px-3 py-2 text-sm\"><time class=\"shrink-0 text-xs text-muted\">{E(message.CapturedAt.ToString("HH:mm:ss"))}</time><span class=\"font-semibold text-foreground\">{E(message.PlayerName)}</span><span class=\"min-w-0 break-words text-muted\">{E(message.Message)}</span></div>");
+        builder.Append("</div></div>");
+
+        if (item.ReviewStatus == "CaseFailed" && item.TargetClientId.HasValue)
+        {
+            builder.Append($"<form method=\"post\" action=\"/api/serverpulse/guidance/{E(item.Id)}\" class=\"space-y-3\">{token}<input type=\"hidden\" name=\"operation\" value=\"RetryCase\"><label class=\"block text-xs font-bold uppercase tracking-wide text-muted\">Admin note<textarea name=\"notes\" maxlength=\"500\" class=\"mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-foreground\">{E(item.ReviewNotes)}</textarea></label><button class=\"rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-white\" type=\"submit\">Retry DemosToDiscord case</button></form>");
+            return builder.Append("</div></details>").ToString();
+        }
+
+        var candidates = item.PlayersAtCapture.Where(value => !value.IsBot &&
+            !value.PlayerKey.Equals(item.ReporterKey, StringComparison.OrdinalIgnoreCase)).OrderBy(value => value.PlayerName).ToList();
+        builder.Append($"<form method=\"post\" action=\"/api/serverpulse/guidance/{E(item.Id)}\" class=\"space-y-3\">{token}<label class=\"block text-xs font-bold uppercase tracking-wide text-muted\">Accused player<select name=\"targetClientId\" required class=\"mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-foreground\"><option value=\"\">Select a player who was in the game…</option>");
+        foreach (var player in candidates)
+            builder.Append($"<option value=\"{player.ClientId}\">{E(player.PlayerName)} · ID {player.ClientId}</option>");
+        builder.Append("</select></label><label class=\"block text-xs font-bold uppercase tracking-wide text-muted\">Admin note<textarea name=\"notes\" maxlength=\"500\" placeholder=\"Why this player was selected, or why the signal was dismissed\" class=\"mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-foreground\"></textarea></label><div class=\"flex flex-wrap gap-2\"><button name=\"operation\" value=\"Resolve\" class=\"rounded-lg border border-line bg-surface px-4 py-2 text-sm font-semibold text-foreground\" type=\"submit\">Resolve only</button>");
+        if (_config.PlayerGuidance.EnableDemosToDiscordEscalation)
+            builder.Append("<button name=\"operation\" value=\"ResolveAndCreateCase\" class=\"rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-white\" type=\"submit\">Resolve &amp; create review case</button>");
+        builder.Append("<button name=\"operation\" value=\"Dismiss\" class=\"rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-300\" type=\"submit\" formnovalidate>Dismiss signal</button></div></form>");
+        return builder.Append("</div></details>").ToString();
+    }
+
+    private string AntiForgeryField()
+    {
+        var context = _httpContextAccessor.HttpContext;
+        if (context is null)
+            return string.Empty;
+        var token = _antiforgery.GetAndStoreTokens(context).RequestToken;
+        return string.IsNullOrWhiteSpace(token)
+            ? string.Empty
+            : $"<input type=\"hidden\" name=\"__RequestVerificationToken\" value=\"{E(token)}\">";
+    }
+
+    private static string ReviewBadge(string status) => status switch
+    {
+        "AutomaticallyResolved" => Badge("Auto resolved", "green"),
+        "ManuallyResolved" => Badge("Manually resolved", "green"),
+        "CaseCreated" => Badge("Review case created", "green"),
+        "CaseQueued" => Badge("Creating case", "amber"),
+        "CaseFailed" => Badge("Case handoff failed", "red"),
+        "Dismissed" => Badge("Dismissed", "blue"),
+        _ => Badge("Target unresolved", "amber")
+    };
 
     private string Health(DashboardSnapshot snapshot)
     {

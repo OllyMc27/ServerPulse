@@ -27,6 +27,7 @@ public sealed class PlayerGuidanceService : IDisposable
     private readonly ConcurrentDictionary<PlayerCooldownKey, long> _playerCooldowns = new();
     private readonly ConcurrentDictionary<string, long> _serverCooldowns = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, StaffAlertWindow> _staffAlertWindows = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, ChatHistoryWindow> _chatHistory = new(StringComparer.OrdinalIgnoreCase);
     private int _messagesSincePrune;
     private bool _disposed;
 
@@ -110,13 +111,22 @@ public sealed class PlayerGuidanceService : IDisposable
             (Config.IgnoreTeamMessages && chatEvent.IsTeamMessage))
             return;
 
-        var target = Config.EnableTargetAssistance
-            ? FindMentionedTarget(message, client, server.ConnectedClients, ExcludeBots(server.Id))
-            : null;
+        var contextMessage = new GuidanceContextMessageRecord
+        {
+            MessageId = messageId,
+            CapturedAt = chatEvent.CreatedAt,
+            ClientId = client.ClientId,
+            PlayerKey = reporterKey,
+            PlayerName = AnalyticsEngine.CleanDisplayText(client.CleanedName),
+            Message = TruncateContext(message),
+            IsTeamMessage = chatEvent.IsTeamMessage
+        };
+        RecordContext(server.Id, contextMessage);
+        EFClient? target = null;
 
         if (IsReportCommand(message, settings.ReportCommand))
         {
-            target = FindReportTarget(message, settings.ReportCommand, client, server.ConnectedClients, ExcludeBots(server.Id)) ?? target;
+            target = FindReportTarget(message, settings.ReportCommand, client, server.ConnectedClients, ExcludeBots(server.Id));
             if (Config.TrackReportCommands)
                 StoreEvent("Report", "Official report", settings.ReportCommand, "Report command observed", false);
             return;
@@ -125,6 +135,10 @@ public sealed class PlayerGuidanceService : IDisposable
         var match = _detectionEngine.Detect(message, settings.ExcludedPhrases);
         if (match is null)
             return;
+
+        target = Config.EnableTargetAssistance
+            ? FindMentionedTarget(message, match.Pattern, match.Category, client, server.ConnectedClients, ExcludeBots(server.Id))
+            : null;
 
         PruneIfNeeded();
         var outcome = "Signal recorded";
@@ -185,6 +199,7 @@ public sealed class PlayerGuidanceService : IDisposable
                 EventType = eventType,
                 ServerId = server.Id,
                 ServerName = AnalyticsEngine.CleanDisplayText(server.ServerName),
+                LegacyServerId = server.LegacyDatabaseId,
                 Game = server.GameCode.ToString(),
                 Map = string.IsNullOrWhiteSpace(server.Map?.Alias) ? server.Map?.Name ?? "Unknown" : server.Map.Alias,
                 Mode = AnalyticsEngine.FriendlyMode(server.Gametype),
@@ -193,13 +208,27 @@ public sealed class PlayerGuidanceService : IDisposable
                 ReporterKey = reporterKey,
                 TargetKey = target is null ? string.Empty : playerKey(target),
                 TargetClientId = target?.ClientId,
+                TargetNetworkId = target?.NetworkId,
                 TargetName = target is null ? string.Empty : AnalyticsEngine.CleanDisplayText(target.CleanedName),
+                ResolutionMethod = target is null ? string.Empty : "Automatic unique name match",
+                ReviewStatus = target is null ? "Unresolved" : "AutomaticallyResolved",
                 Category = category,
                 Pattern = pattern,
                 Outcome = eventOutcome,
                 StaffAlertSent = alertSent,
                 CapturedAt = chatEvent.CreatedAt,
-                Excerpt = excerpt
+                Excerpt = excerpt,
+                ContextMessages = Config.RetainAdminReviewContext ? ContextBefore(server.Id, chatEvent.CreatedAt) : [],
+                PlayersAtCapture = Config.RetainAdminReviewContext
+                    ? server.ConnectedClients.Select(player => new GuidancePlayerSnapshotRecord
+                    {
+                        ClientId = player.ClientId,
+                        NetworkId = player.NetworkId,
+                        PlayerKey = playerKey(player),
+                        PlayerName = AnalyticsEngine.CleanDisplayText(player.CleanedName),
+                        IsBot = player.IsBot
+                    }).ToList()
+                    : []
             });
         }
     }
@@ -221,7 +250,7 @@ public sealed class PlayerGuidanceService : IDisposable
             return new GuidanceMessageAnalysis(false, null, null, null, "No player-guidance rule matched.");
 
         var target = origin is not null && connectedClients is not null && Config.EnableTargetAssistance
-            ? FindMentionedTarget(message, origin, connectedClients, ExcludeBots(serverId))
+            ? FindMentionedTarget(message, match.Pattern, match.Category, origin, connectedClients, ExcludeBots(serverId))
             : null;
         return new GuidanceMessageAnalysis(
             true,
@@ -296,19 +325,25 @@ public sealed class PlayerGuidanceService : IDisposable
         return messages.Values.FirstOrDefault();
     }
 
-    private EFClient? FindMentionedTarget(string message, EFClient origin, IReadOnlyList<EFClient> clients, bool excludeBots)
+    private EFClient? FindMentionedTarget(
+        string message,
+        string matchedPattern,
+        string category,
+        EFClient origin,
+        IReadOnlyList<EFClient> clients,
+        bool excludeBots)
     {
-        var normalizedMessage = PlayerGuidanceDetectionEngine.Normalize(message, Config.EnableLeetNormalization);
         var candidates = clients
             .Where(client => client.ClientId != origin.ClientId && (!excludeBots || !client.IsBot))
-            .Select(client => new { Client = client, Name = PlayerGuidanceDetectionEngine.Normalize(client.CleanedName, Config.EnableLeetNormalization) })
-            .Where(candidate => candidate.Name.Length >= Config.MinimumTargetNameLength)
-            .Where(candidate => PlayerGuidanceDetectionEngine.ContainsWholePhrase(normalizedMessage, candidate.Name))
-            .OrderByDescending(candidate => candidate.Name.Length)
             .ToArray();
-        if (candidates.Length == 0) return null;
-        if (candidates.Length > 1 && candidates[0].Name.Length == candidates[1].Name.Length) return null;
-        return candidates[0].Client;
+        var clientId = GuidanceTargetResolver.ResolveUniqueClientId(
+            message,
+            matchedPattern,
+            category,
+            candidates.Select(value => (value.ClientId, value.CleanedName)),
+            Config.MinimumTargetNameLength,
+            Config.EnableLeetNormalization);
+        return clientId.HasValue ? candidates.FirstOrDefault(value => value.ClientId == clientId.Value) : null;
     }
 
     private EFClient? FindReportTarget(string message, string reportCommand, EFClient origin, IReadOnlyList<EFClient> clients, bool excludeBots)
@@ -327,9 +362,42 @@ public sealed class PlayerGuidanceService : IDisposable
             .Where(item => item.Name.Equals(normalizedArgument, StringComparison.Ordinal) || item.Name.StartsWith(normalizedArgument, StringComparison.Ordinal))
             .OrderBy(item => item.Name.Length)
             .ToArray();
-        return candidates.Length == 1 || candidates.Length > 1 && candidates[0].Name.Length < candidates[1].Name.Length
-            ? candidates[0].Client
-            : null;
+        return candidates.Length == 1 ? candidates[0].Client : null;
+    }
+
+    private void RecordContext(string serverId, GuidanceContextMessageRecord message)
+    {
+        if (!Config.RetainAdminReviewContext)
+            return;
+        var maximum = Math.Clamp(Config.ReviewContextMaximumMessages, 5, 100);
+        var after = TimeSpan.FromSeconds(Math.Clamp(Config.ReviewContextAfterSeconds, 0, 300));
+        _store.AppendPlayerGuidanceContext(serverId, message, after, maximum);
+        var window = _chatHistory.GetOrAdd(serverId, _ => new ChatHistoryWindow());
+        lock (window.Messages)
+        {
+            window.Messages.Add(message);
+            var cutoff = message.CapturedAt.AddSeconds(-Math.Clamp(Config.ReviewContextBeforeSeconds, 5, 600));
+            window.Messages.RemoveAll(value => value.CapturedAt < cutoff);
+            if (window.Messages.Count > maximum)
+                window.Messages.RemoveRange(0, window.Messages.Count - maximum);
+        }
+    }
+
+    private List<GuidanceContextMessageRecord> ContextBefore(string serverId, DateTimeOffset capturedAt)
+    {
+        if (!_chatHistory.TryGetValue(serverId, out var window))
+            return [];
+        var cutoff = capturedAt.AddSeconds(-Math.Clamp(Config.ReviewContextBeforeSeconds, 5, 600));
+        lock (window.Messages)
+            return window.Messages.Where(value => value.CapturedAt >= cutoff && value.CapturedAt <= capturedAt)
+                .TakeLast(Math.Clamp(Config.ReviewContextMaximumMessages, 5, 100)).ToList();
+    }
+
+    private string TruncateContext(string value)
+    {
+        var clean = AnalyticsEngine.CleanDisplayText(value);
+        var maximum = Math.Clamp(_rootConfig.ChatExcerptMaximumLength, 20, 250);
+        return clean.Length <= maximum ? clean : clean[..maximum] + "…";
     }
 
     private bool ExcludeBots(string serverId) =>
@@ -446,6 +514,10 @@ public sealed class PlayerGuidanceService : IDisposable
         public DateTimeOffset WindowStartedAt = startedAt;
         public HashSet<string> ReporterKeys { get; } = new(StringComparer.OrdinalIgnoreCase);
         public bool AlertSent;
+    }
+    private sealed class ChatHistoryWindow
+    {
+        public List<GuidanceContextMessageRecord> Messages { get; } = [];
     }
     private sealed record EffectiveGuidanceSettings(
         bool Enabled,
