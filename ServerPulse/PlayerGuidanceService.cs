@@ -77,6 +77,7 @@ public sealed class PlayerGuidanceService : IDisposable
         _rootConfig.PlayerGuidance ??= new PlayerGuidanceConfig();
         Config.Categories ??= PlayerGuidanceConfig.DefaultCategories();
         Config.ReminderMessages ??= PlayerGuidanceConfig.DefaultReminderMessages();
+        Config.UnresolvedReminderMessages ??= PlayerGuidanceConfig.DefaultUnresolvedReminderMessages();
         Config.ExcludedPhrases ??= [];
         Config.CommunityReportPhrases ??= PlayerGuidanceConfig.DefaultCommunityReportPhrases();
         Config.CommunityReportExclusions ??= [];
@@ -299,9 +300,13 @@ public sealed class PlayerGuidanceService : IDisposable
     private string FormatReminder(string categoryName, string senderName, string? targetName, EffectiveGuidanceSettings settings)
     {
         var category = Config.Categories.FirstOrDefault(item => item.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
-        var template = Localized(category?.ReminderMessages, settings.Language)
-                       ?? Localized(Config.ReminderMessages, settings.Language)
-                       ?? "^1REMINDER:^3 Use {reportCommand} {target} <reason> to report suspected {category}.";
+        var targetResolved = !string.IsNullOrWhiteSpace(targetName);
+        var template = targetResolved
+            ? Localized(category?.ReminderMessages, settings.Language)
+              ?? Localized(Config.ReminderMessages, settings.Language)
+              ?? "^1REMINDER:^3 Use {reportCommand} {target} <reason> to report suspected {category}."
+            : Localized(Config.UnresolvedReminderMessages, settings.Language)
+              ?? "^1REMINDER:^3 Suspect {category}? Use {reportCommand} <player name> <reason> to send an official report.";
         return template
             .Replace("{target}", string.IsNullOrWhiteSpace(targetName) ? "<player>" : targetName.StripColors(), StringComparison.OrdinalIgnoreCase)
             .Replace("{player}", senderName.StripColors(), StringComparison.OrdinalIgnoreCase)

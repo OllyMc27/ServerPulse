@@ -24,7 +24,7 @@ Distinct accusers matter more than raw message volume. Administrators should sti
 ```json
 "PlayerGuidance": {
   "Enabled": true,
-  "ResponseMode": "Private",
+  "ResponseMode": "Public",
   "ReportCommand": "!rep",
   "PlayerCooldownSeconds": 45,
   "ServerCooldownSeconds": 20,
@@ -38,11 +38,14 @@ Distinct accusers matter more than raw message volume. Administrators should sti
   "ReviewContextAfterSeconds": 30,
   "ReviewContextMaximumMessages": 20,
   "EnableDemosToDiscordEscalation": true,
+  "UnresolvedReminderMessages": {
+    "en": "^1REMINDER:^3 Suspect {category}? Type ^1{reportCommand} <player name> <reason>^3 to send an official report to the admins."
+  },
   "NotifyStaff": false
 }
 ```
 
-Start with private reminders. Public or `Both` modes can add unnecessary chat noise on busy servers.
+Public reminders are the default so every player sees the official reporting workflow. Use `Private` on busy servers if the guidance becomes noisy.
 
 ## Detection
 
@@ -73,6 +76,7 @@ The target, reviewer, status, notes and resulting DemosToDiscord case ID are ret
 - `Both`: sends private and public reminders.
 
 Player and server cooldowns suppress repeated responses while retaining the underlying signal and outcome.
+When target assistance cannot resolve a unique player, `UnresolvedReminderMessages` replaces the ordinary target-specific template and explicitly asks the reporter to supply a player name.
 
 ## Report follow-through
 

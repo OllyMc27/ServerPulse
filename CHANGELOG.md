@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Changed new Player Guidance configurations to broadcast public reminders by default.
+- Added a dedicated localisable reminder for accusations whose target cannot be resolved.
+
 ## 1.1.0
 
 - Added conservative unique partial-name resolution for Player Guidance; ambiguous fragments remain unresolved.

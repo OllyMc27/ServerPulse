@@ -182,6 +182,7 @@ public sealed class PlayerGuidanceDetectionEngine
         if (config.StaffAlertWindowSeconds < 1) issues.Add(Error("StaffAlertWindowSeconds must be at least 1."));
         if (config.Categories.Count == 0) issues.Add(Error("At least one guidance category is required."));
         if (config.ReminderMessages.Count == 0) issues.Add(Error("At least one reminder message is required."));
+        if (config.UnresolvedReminderMessages.Count == 0) issues.Add(Error("At least one unresolved-target reminder message is required."));
 
         var categoryNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var phrases = new Dictionary<string, string>(StringComparer.Ordinal);

@@ -64,6 +64,8 @@ Country data comes from IW4MAdmin's local geolocation service. IP addresses are 
 
 | Setting | Default | Purpose |
 | --- | ---: | --- |
+| `ResponseMode` | `Public` | Broadcasts guidance to the server; use `Private` to tell only the sender or `Both` for both paths |
+| `UnresolvedReminderMessages` | Localised reporting prompt | Uses a clearer `<player name>` instruction when target assistance cannot identify the accused player |
 | `RetainAdminReviewContext` | `true` | Retains a bounded admin-only chat/player snapshot around guidance signals |
 | `ReviewContextBeforeSeconds` | `60` | Chat window retained before the triggering message; clamped to 5–600 |
 | `ReviewContextAfterSeconds` | `30` | Chat window appended after the triggering message; clamped to 0–300 |

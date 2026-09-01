@@ -127,6 +127,7 @@ public sealed class Plugin : IPluginV2
         config.PlayerGuidance ??= new PlayerGuidanceConfig();
         config.PlayerGuidance.Categories ??= PlayerGuidanceConfig.DefaultCategories();
         config.PlayerGuidance.ReminderMessages ??= PlayerGuidanceConfig.DefaultReminderMessages();
+        config.PlayerGuidance.UnresolvedReminderMessages ??= PlayerGuidanceConfig.DefaultUnresolvedReminderMessages();
         config.PlayerGuidance.ExcludedPhrases ??= [];
         config.PlayerGuidance.CommunityReportPhrases ??= PlayerGuidanceConfig.DefaultCommunityReportPhrases();
         config.PlayerGuidance.CommunityReportExclusions ??= [];

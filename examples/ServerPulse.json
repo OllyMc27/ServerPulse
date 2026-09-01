@@ -23,7 +23,7 @@
   "EnableOperationalMonitoring": true,
   "PlayerGuidance": {
     "Enabled": false,
-    "ResponseMode": "Private",
+    "ResponseMode": "Public",
     "ReportCommand": "!rep",
     "PlayerCooldownSeconds": 45,
     "ServerCooldownSeconds": 20,
@@ -46,6 +46,9 @@
     "StaffAlertMessage": "^1[ServerPulse]^3 {count} unique players accused {target} of {category} in {window}s.",
     "ReminderMessages": {
       "en": "^1REMINDER:^3 If you believe {target} is {category}, type ^1{reportCommand} {target} <reason>^3 to report it to the admins."
+    },
+    "UnresolvedReminderMessages": {
+      "en": "^1REMINDER:^3 Suspect {category}? Type ^1{reportCommand} <player name> <reason>^3 to send an official report to the admins."
     },
     "ExcludedPhrases": [],
     "CommunityReportPhrases": [

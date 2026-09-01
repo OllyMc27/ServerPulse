@@ -40,7 +40,7 @@ public sealed class PlayerGuidanceServerOverride
 public sealed class PlayerGuidanceConfig
 {
     public bool Enabled { get; set; }
-    public GuidanceResponseMode ResponseMode { get; set; } = GuidanceResponseMode.Private;
+    public GuidanceResponseMode ResponseMode { get; set; } = GuidanceResponseMode.Public;
     public string ReportCommand { get; set; } = "!rep";
     public int PlayerCooldownSeconds { get; set; } = 45;
     public int ServerCooldownSeconds { get; set; } = 20;
@@ -63,6 +63,7 @@ public sealed class PlayerGuidanceConfig
     public string StaffAlertMessage { get; set; } =
         "^1[ServerPulse]^3 {count} unique players accused {target} of {category} in {window}s.";
     public Dictionary<string, string> ReminderMessages { get; set; } = DefaultReminderMessages();
+    public Dictionary<string, string> UnresolvedReminderMessages { get; set; } = DefaultUnresolvedReminderMessages();
     public List<string> ExcludedPhrases { get; set; } = [];
     public List<string> CommunityReportPhrases { get; set; } = DefaultCommunityReportPhrases();
     public List<string> CommunityReportExclusions { get; set; } = ["anti cheat", "anticheat", "not cheating", "not a cheater"];
@@ -73,6 +74,11 @@ public sealed class PlayerGuidanceConfig
     public static Dictionary<string, string> DefaultReminderMessages() => new(StringComparer.OrdinalIgnoreCase)
     {
         ["en"] = "^1REMINDER:^3 If you believe {target} is {category}, type ^1{reportCommand} {target} <reason>^3 to report it to the admins."
+    };
+
+    public static Dictionary<string, string> DefaultUnresolvedReminderMessages() => new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["en"] = "^1REMINDER:^3 Suspect {category}? Type ^1{reportCommand} <player name> <reason>^3 to send an official report to the admins."
     };
 
     public static List<string> DefaultCommunityReportPhrases() =>

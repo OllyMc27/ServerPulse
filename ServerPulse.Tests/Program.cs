@@ -11,6 +11,7 @@ internal static class Program
             ("unique partial player name resolves", UniquePartialAsync),
             ("ambiguous partial remains unresolved", AmbiguousPartialAsync),
             ("ordinary accusation wording does not become a player match", StopWordAsync),
+            ("guidance defaults to public with an unresolved-target message", GuidanceDefaultsAsync),
             ("guidance context and manual status are persisted", StoreWorkflowAsync)
         };
         var failed = 0;
@@ -52,6 +53,16 @@ internal static class Program
         var resolved = GuidanceTargetResolver.ResolveUniqueClientId(
             "nice cheating", "cheating", "cheating", [(621, "NiceGuy")], 3, true);
         Equal<int?>(null, resolved, "ordinary wording must not be treated as a target fragment");
+        return Task.CompletedTask;
+    }
+
+    private static Task GuidanceDefaultsAsync()
+    {
+        var config = new PlayerGuidanceConfig();
+        Equal(GuidanceResponseMode.Public, config.ResponseMode, "new configurations should default to public guidance");
+        True(config.UnresolvedReminderMessages.TryGetValue("en", out var message) &&
+             message.Contains("<player name>", StringComparison.Ordinal),
+            "unresolved guidance should explain how to supply the player name");
         return Task.CompletedTask;
     }
 
