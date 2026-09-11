@@ -226,7 +226,7 @@ public sealed class GuidanceAdminEndpointMiddleware(
     private static string CurrentName(ClaimsPrincipal user) =>
         user.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Administrator";
     private static void Redirect(HttpContext context, string result) => context.Response.Redirect(
-        $"/Interaction/Render/{ServerPulseWebfront.InteractionKey}?view=guidance&period=30&saved={WebUtility.UrlEncode(result)}");
+        $"{ServerPulseWebfront.NativePath}?view=guidance&period=30&saved={WebUtility.UrlEncode(result)}");
     private static async Task WriteStatusAsync(HttpContext context, int status, string message)
     {
         context.Response.StatusCode = status;

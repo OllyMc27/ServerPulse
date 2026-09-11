@@ -10,24 +10,9 @@ namespace ServerPulse;
 public sealed class ServerPulseWebfront : IDisposable
 {
     public const string InteractionKey = "Webfront::Nav::Admin::ServerPulse";
+    public const string NativePath = "/serverpulse";
     private const int RotationPageSize = 25;
     private const int ChatPageSize = 20;
-    private const string Styles = """
-        <style>
-          .max-w-7xl:has(.sp-workspace)>div.flex.items-center.gap-3.mb-8{display:none}
-          .sp-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
-          .sp-explore-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--color-line)}
-          .sp-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
-          .sp-two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(19rem,.5fr);gap:1rem}
-          .sp-heat{display:grid;grid-template-columns:3.25rem repeat(24,minmax(1rem,1fr));gap:3px;align-items:center}
-          .sp-heat-cell{height:1.55rem;border:1px solid color-mix(in srgb,var(--color-line) 65%,transparent);border-radius:.2rem;background:color-mix(in srgb,var(--color-primary) calc(var(--heat)*1%),var(--color-surface-alt))}
-          .sp-quote{border-left:3px solid color-mix(in srgb,var(--color-primary) 65%,transparent)}
-          @media (min-width:1280px){.sp-workspace{width:min(1600px,calc(100vw - 19rem));position:relative;left:50%;transform:translateX(-50%)}}
-          @media (max-width:1023px){.sp-status-grid,.sp-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-two{grid-template-columns:1fr}}
-          @media (max-width:560px){.sp-status-grid,.sp-summary-grid,.sp-explore-grid{grid-template-columns:1fr}}
-        </style>
-        """;
-
     private readonly IInteractionRegistration _interactions;
     private readonly IConfigurationHandlerV2<ServerPulseConfig> _configurationHandler;
     private readonly ServerPulseConfig _config;
@@ -62,28 +47,9 @@ public sealed class ServerPulseWebfront : IDisposable
     public void Register()
     {
         _interactions.UnregisterInteraction(InteractionKey);
-        if (!_config.EnableWebfrontDashboard)
-            return;
-
-        _interactions.RegisterInteraction(InteractionKey, (_, _, _) =>
-        {
-            IInteractionData interaction = new InteractionData
-            {
-                Enabled = true,
-                Name = "ServerPulse",
-                Description = "Traffic, retention and community intelligence",
-                DisplayMeta = "ph-chart-line-up",
-                InteractionId = InteractionKey,
-                MinimumPermission = _config.WebfrontMinimumPermission,
-                InteractionType = InteractionType.TemplateContent,
-                Source = "ServerPulse",
-                PermissionEntity = "Interaction",
-                PermissionAccess = "Read",
-                Action = (_, _, _, meta, _) => Task.FromResult(Render(meta))
-            };
-            return Task.FromResult(interaction);
-        });
     }
+
+    public string RenderNative(IDictionary<string, string> meta) => Render(meta);
 
     private string Render(IDictionary<string, string> meta)
     {
@@ -91,7 +57,7 @@ public sealed class ServerPulseWebfront : IDisposable
         var days = ReadInteger(meta, "period", 30, 1, 365);
         var from = DateTimeOffset.UtcNow.AddDays(-days);
         var snapshot = _engine.Snapshot();
-        var builder = new StringBuilder(Styles).Append("<div class=\"sp-workspace space-y-5\">");
+        var builder = new StringBuilder("<div class=\"sp-workspace space-y-5\">");
 
         if (view == "overview")
             builder.Append(Overview(snapshot, from, days));
@@ -354,7 +320,7 @@ public sealed class ServerPulseWebfront : IDisposable
         }
 
         builder.Append("<section class=\"overflow-hidden rounded-xl border border-line bg-surface shadow-sm\"><div class=\"border-b border-line px-5 py-4\"><h3 class=\"font-semibold text-foreground\">Filter community voice</h3><p class=\"mt-1 text-sm text-muted\">Choose a topic or server. Player identities remain anonymised.</p></div><form method=\"get\" action=\"")
-            .Append($"/Interaction/Render/{InteractionKey}")
+            .Append(NativePath)
             .Append("\" class=\"grid gap-3 p-5 md:grid-cols-[1fr_1fr_auto]\"><input type=\"hidden\" name=\"view\" value=\"chat\"><input type=\"hidden\" name=\"period\" value=\"").Append(days).Append("\"><label class=\"text-xs font-medium uppercase tracking-wide text-muted\">Topic<select name=\"category\" class=\"mt-1 w-full rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm normal-case text-foreground\"><option value=\"\">All topics</option>");
         foreach (var category in categories)
             builder.Append($"<option value=\"{E(category.Name)}\"{(category.Name.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase) ? " selected" : string.Empty)}>{E(category.Name)} ({category.Count:N0})</option>");
@@ -726,7 +692,7 @@ public sealed class ServerPulseWebfront : IDisposable
     }
 
     private static string Url(string view, int days, string? extra = null) =>
-        $"/Interaction/Render/{InteractionKey}?view={WebUtility.UrlEncode(view)}&period={days}" +
+        $"{NativePath}?view={WebUtility.UrlEncode(view)}&period={days}" +
         (string.IsNullOrWhiteSpace(extra) ? string.Empty : $"&{extra.TrimStart('&')}");
 
     private static int ReadInteger(IDictionary<string, string> meta, string key, int fallback, int minimum, int maximum) =>

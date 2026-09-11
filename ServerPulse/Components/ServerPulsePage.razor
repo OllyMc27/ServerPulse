@@ -1,0 +1,59 @@
+@page "/serverpulse"
+@rendermode RenderMode.InteractiveServer
+@inject ServerPulseWebfront Webfront
+@inject ServerPulseConfig Config
+@inject NavigationManager Navigation
+
+<PageTitle>ServerPulse</PageTitle>
+
+@if (_loading)
+{
+    <div class="sp-native-state"><i class="ph ph-spinner animate-spin"></i><span>Loading ServerPulse…</span></div>
+}
+else if (!_authorised)
+{
+    <div class="sp-native-state sp-native-error"><i class="ph ph-lock-key"></i><span>You do not have permission to open ServerPulse.</span></div>
+}
+else if (!_available)
+{
+    <div class="sp-native-state"><i class="ph ph-eye-slash"></i><span>The ServerPulse dashboard is disabled in configuration.</span></div>
+}
+else if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="sp-native-state sp-native-error"><i class="ph ph-warning-circle"></i><span>@_error</span></div>
+}
+else
+{
+    @((MarkupString)_markup)
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    private bool _loading = true;
+    private bool _authorised;
+    private bool _available;
+    private string _markup = string.Empty;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = AuthenticationStateTask is null ? null : await AuthenticationStateTask;
+        _authorised = NativeWebSupport.HasPermission(state?.User, Config.WebfrontMinimumPermission);
+        _available = Config.Enabled && Config.EnableWebfrontDashboard;
+
+        if (_authorised && _available)
+        {
+            try
+            {
+                _markup = Webfront.RenderNative(NativeWebSupport.Query(Navigation.Uri));
+            }
+            catch (Exception exception)
+            {
+                _error = $"ServerPulse could not be loaded: {exception.Message}";
+            }
+        }
+
+        _loading = false;
+    }
+}

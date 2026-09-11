@@ -1,0 +1,24 @@
+.sp-status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+.sp-explore-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--color-line)}
+.sp-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem}
+.sp-two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(19rem,.5fr);gap:1rem}
+.sp-heat{display:grid;grid-template-columns:3.25rem repeat(24,minmax(1rem,1fr));gap:3px;align-items:center}
+.sp-heat-cell{height:1.55rem;border:1px solid color-mix(in srgb,var(--color-line) 65%,transparent);border-radius:.2rem;background:color-mix(in srgb,var(--color-primary) calc(var(--heat)*1%),var(--color-surface-alt))}
+.sp-quote{border-left:3px solid color-mix(in srgb,var(--color-primary) 65%,transparent)}
+
+.sp-native-state {
+  display: flex;
+  min-height: 14rem;
+  align-items: center;
+  justify-content: center;
+  gap: .65rem;
+  color: var(--color-muted);
+}
+
+@media (min-width:1280px){.sp-workspace{width:min(1600px,calc(100vw - 19rem));position:relative;left:50%;transform:translateX(-50%)}}
+@media (max-width:1023px){.sp-status-grid,.sp-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sp-two{grid-template-columns:1fr}}
+@media (max-width:560px){.sp-status-grid,.sp-summary-grid,.sp-explore-grid{grid-template-columns:1fr}}
+
+.sp-native-error {
+  color: var(--color-danger, #ef4444);
+}

@@ -1,0 +1,33 @@
+<Project>
+  <!-- Temporary local copy of the IW4MAdmin bundle packaging contract.
+       Replace with the package-provided target once the bundle SDK is published. -->
+  <PropertyGroup Condition="'$(IW4MAdminBundle)' == 'true'">
+    <IW4MAdminBundleId Condition="'$(IW4MAdminBundleId)' == ''">$(AssemblyName)</IW4MAdminBundleId>
+    <IW4MAdminBundleName Condition="'$(IW4MAdminBundleName)' == ''">$(AssemblyName)</IW4MAdminBundleName>
+    <IW4MAdminBundleVersion Condition="'$(IW4MAdminBundleVersion)' == ''">$(Version)</IW4MAdminBundleVersion>
+    <IW4MAdminBundleAuthor Condition="'$(IW4MAdminBundleAuthor)' == ''">$(Authors)</IW4MAdminBundleAuthor>
+    <IW4MAdminBundleOutput Condition="'$(IW4MAdminBundleOutput)' == ''">$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', 'bin', '$(Configuration)'))</IW4MAdminBundleOutput>
+  </PropertyGroup>
+
+  <Target Name="PackIW4MAdminBundle" AfterTargets="Build" Condition="'$(IW4MAdminBundle)' == 'true'">
+    <PropertyGroup>
+      <_BundleStage>$([MSBuild]::NormalizeDirectory('$(IntermediateOutputPath)', 'iw4m-bundle'))</_BundleStage>
+      <_BundleManifest>{"schemaVersion":1,"id":"$(IW4MAdminBundleId)","name":"$(IW4MAdminBundleName)","version":"$(IW4MAdminBundleVersion)","author":"$(IW4MAdminBundleAuthor)","entryAssembly":"lib/$(TargetFileName)","webRoot":"wwwroot","gscRoot":"gsc","resourceRoot":"resources"}</_BundleManifest>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BundleWeb Include="$(MSBuildProjectDirectory)\wwwroot\**\*" />
+      <_BundleGsc Include="$(MSBuildProjectDirectory)\gsc\**\*" />
+      <_BundleResources Include="$(MSBuildProjectDirectory)\Resources\**\*" />
+    </ItemGroup>
+    <RemoveDir Directories="$(_BundleStage)" />
+    <MakeDir Directories="$(_BundleStage)lib" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(_BundleStage)lib" />
+    <WriteLinesToFile File="$(_BundleStage)manifest.json" Lines="$(_BundleManifest)" Overwrite="true" />
+    <Copy Condition="'@(_BundleWeb)' != ''" SourceFiles="@(_BundleWeb)" DestinationFiles="@(_BundleWeb->'$(_BundleStage)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy Condition="'@(_BundleGsc)' != ''" SourceFiles="@(_BundleGsc)" DestinationFiles="@(_BundleGsc->'$(_BundleStage)gsc\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <Copy Condition="'@(_BundleResources)' != ''" SourceFiles="@(_BundleResources)" DestinationFiles="@(_BundleResources->'$(_BundleStage)resources\%(RecursiveDir)%(Filename)%(Extension)')" />
+    <MakeDir Directories="$(IW4MAdminBundleOutput)" />
+    <ZipDirectory SourceDirectory="$(_BundleStage)" DestinationFile="$(IW4MAdminBundleOutput)$(IW4MAdminBundleId).zip" Overwrite="true" />
+    <Message Importance="high" Text="IW4MAdmin bundle written to $(IW4MAdminBundleOutput)$(IW4MAdminBundleId).zip" />
+  </Target>
+</Project>

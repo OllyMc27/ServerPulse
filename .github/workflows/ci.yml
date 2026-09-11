@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feature/native-web-bundle ]
   pull_request:
 
 jobs:
@@ -17,8 +17,8 @@ jobs:
         run: dotnet restore ServerPulse/ServerPulse.csproj
       - name: Build
         run: dotnet build ServerPulse/ServerPulse.csproj -c Release --no-restore
-      - name: Upload DLL
+      - name: Upload native web bundle
         uses: actions/upload-artifact@v4
         with:
-          name: ServerPulse
-          path: ServerPulse/bin/Release/net10.0/ServerPulse.dll
+          name: ServerPulse-native-web-bundle
+          path: ServerPulse/bin/Release/ServerPulse.zip

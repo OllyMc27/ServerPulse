@@ -4,6 +4,8 @@
 
 ServerPulse turns normal [IW4MAdmin](https://github.com/RaidMax/IW4M-Admin) events into a native operations workspace. See where players join, what keeps them playing, which rotations lose them, what the community is saying and whether chat accusations become useful reports.
 
+> **Native bundle development:** the `feature/native-web-bundle` branch packages ServerPulse as a routable Razor page in `ServerPulse.zip`. Analytics collection, guidance, configuration and stored data remain unchanged. The bundle currently requires IW4MAdmin's experimental plugin-bundle host; see [Native web bundle development](docs/wiki/Native-Web-Bundle.md).
+
 ![ServerPulse overview](docs/images/serverpulse-overview.png)
 
 <sub>Dashboard shown with representative sample data. ServerPulse never changes server settings automatically.</sub>

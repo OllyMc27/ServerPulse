@@ -71,8 +71,6 @@ public sealed class Plugin : IPluginV2
         IGameServerEventSubscriptions.MonitoringStopped += OnMonitoringStopped;
         IGameServerEventSubscriptions.ConnectionInterrupted += OnConnectionInterrupted;
         IGameServerEventSubscriptions.ConnectionRestored += OnConnectionRestored;
-        _webfront.Register();
-
         _logger.LogInformation("[{Name}] {Version} by {Author} initialized", Name, Version, Author);
     }
 
@@ -81,6 +79,9 @@ public sealed class Plugin : IPluginV2
         if (_configurationChanged)
             await _configurationHandler.Set(_config);
         await _engine.StartAsync(manager, token);
+        _webfront.Register();
+        if (_config.Enabled && _config.EnableWebfrontDashboard)
+            manager.GetPageList().Pages["ServerPulse"] = ServerPulseWebfront.NativePath;
         Console.WriteLine($"[{Name}] by {Author} loaded. Version: {Version}");
         Console.WriteLine($"[{Name}] analytics enabled: {_config.Enabled}; webfront: {_config.EnableWebfrontDashboard}; player guidance: {_config.PlayerGuidance.Enabled}; timezone: {AnalyticsTime.ConfigurationLabel}");
     }
