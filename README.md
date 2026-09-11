@@ -4,7 +4,7 @@
 
 ServerPulse turns normal [IW4MAdmin](https://github.com/RaidMax/IW4M-Admin) events into a native operations workspace. See where players join, what keeps them playing, which rotations lose them, what the community is saying and whether chat accusations become useful reports.
 
-> **Native bundle development:** the `feature/native-web-bundle` branch packages ServerPulse as a routable Razor page in `ServerPulse.zip`. Native navigation, query-string drill-downs, host-themed responsive styling and the custom sidebar icon are supplied by the bundle. Analytics collection, guidance, configuration and stored data remain unchanged. The bundle requires IW4MAdmin's plugin-bundle host; see [Native web bundle development](docs/wiki/Native-Web-Bundle.md).
+> **Native bundle development:** the `feature/native-web-bundle` branch packages ServerPulse as a routable Razor page in `ServerPulse.zip`. Reliable automatic navigation, query-string drill-downs, host-themed responsive styling and the custom sidebar icon are supplied by the bundle. Analytics collection, guidance, configuration and stored data remain unchanged. The bundle requires IW4MAdmin's plugin-bundle host; see [Native web bundle development](docs/wiki/Native-Web-Bundle.md).
 
 ![ServerPulse overview](docs/images/serverpulse-overview.png)
 
@@ -54,4 +54,4 @@ The [ServerPulse wiki](https://github.com/OllyMc27/ServerPulse/wiki) contains in
 
 Need match demos and a staff case-review workflow as well? [DemosToDiscord](https://github.com/OllyMc27/DemosToDiscord) captures IW4MAdmin evidence, delivers demos to Discord and provides a native case-review workspace. With both current plugins loaded, an administrator can resolve an otherwise ambiguous Player Guidance signal and create a proactive human-review case directly from ServerPulse.
 
-ServerPulse v1.2.0 targets .NET 10 and the current IW4MAdmin plugin lifecycle. Licensed under the [MIT License](LICENSE).
+ServerPulse v1.2.1 targets .NET 10 and the current IW4MAdmin plugin lifecycle. Licensed under the [MIT License](LICENSE).

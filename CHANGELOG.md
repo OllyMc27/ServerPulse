@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 - 2026-09-11
+
+- Fixed sidebar transitions into and out of ServerPulse on the current bundle host by opting the wrapper route out of incompatible enhanced routing.
+- Navigation now reloads the destination automatically instead of changing only the browser URL and requiring a manual refresh.
+
 ## 1.2.0 - 2026-09-11
 
 - Fixed native sidebar and in-dashboard navigation so route and query changes rerender ServerPulse without a manual browser refresh.
