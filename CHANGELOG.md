@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2 - 2026-09-11
+
+- Added a plugin-side sidebar navigation bridge for bundle hosts whose interactive sidebar updates browser history without replacing the routed page.
+- Same-origin sidebar destinations now perform a reliable full document navigation while modified clicks, downloads and external links retain their normal behaviour.
+
 ## 1.2.1 - 2026-09-11
 
 - Fixed sidebar transitions into and out of ServerPulse on the current bundle host by opting the wrapper route out of incompatible enhanced routing.
