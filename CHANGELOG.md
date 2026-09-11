@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.3 - 2026-09-11
+
+- Fixed links inside ServerPulse cards, filters, pagination and detail pages when hosted by IW4MAdmin's interactive router.
+- Plugin-owned links now opt out of enhanced navigation and use a scoped document-navigation fallback, while modified clicks, downloads and external links keep their normal behaviour.
+
 ## 1.2.2 - 2026-09-11
 
 - Added a plugin-side sidebar navigation bridge for bundle hosts whose interactive sidebar updates browser history without replacing the routed page.

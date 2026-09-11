@@ -1,6 +1,6 @@
 let installed = false;
 
-function handleSidebarClick(event) {
+function handleNavigationClick(event) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
         return;
     }
@@ -10,7 +10,7 @@ function handleSidebarClick(event) {
         return;
     }
 
-    const anchor = target.closest("aside a[href]");
+    const anchor = target.closest("aside a[href], .sp-workspace a[href]");
     if (!anchor || anchor.hasAttribute("download") || (anchor.target && anchor.target !== "_self")) {
         return;
     }
@@ -30,7 +30,7 @@ export function install() {
         return;
     }
 
-    document.addEventListener("click", handleSidebarClick, true);
+    document.addEventListener("click", handleNavigationClick, true);
     installed = true;
 }
 
@@ -39,6 +39,6 @@ export function uninstall() {
         return;
     }
 
-    document.removeEventListener("click", handleSidebarClick, true);
+    document.removeEventListener("click", handleNavigationClick, true);
     installed = false;
 }

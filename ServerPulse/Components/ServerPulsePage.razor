@@ -28,7 +28,9 @@ else if (!string.IsNullOrWhiteSpace(_error))
 }
 else
 {
-    @((MarkupString)_markup)
+    <div data-enhance-nav="false">
+        @((MarkupString)_markup)
+    </div>
 }
 
 @code {
@@ -79,7 +81,7 @@ else
         {
             _navigationBridge = await JS.InvokeAsync<IJSObjectReference>(
                 "import",
-                "/_content/ServerPulse/navigation-bridge.js?v=1.2.2");
+                "/_content/ServerPulse/navigation-bridge.js?v=1.2.3");
             await _navigationBridge.InvokeVoidAsync("install");
         }
         catch (JSDisconnectedException)
