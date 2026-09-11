@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 - 2026-09-11
+
+- Fixed native sidebar and in-dashboard navigation so route and query changes rerender ServerPulse without a manual browser refresh.
+- Restored the dedicated ServerPulse sidebar icon through bundle-host navigation metadata while retaining compatibility with the stable plugin SDK.
+- Reworked bundle CSS around IW4MAdmin theme tokens, full-width content flow and responsive native cards without viewport-positioning overrides.
+
 ## 1.1.1
 
 - Changed new Player Guidance configurations to broadcast public reminders by default.

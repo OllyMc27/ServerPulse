@@ -81,7 +81,7 @@ public sealed class Plugin : IPluginV2
         await _engine.StartAsync(manager, token);
         _webfront.Register();
         if (_config.Enabled && _config.EnableWebfrontDashboard)
-            manager.GetPageList().Pages["ServerPulse"] = ServerPulseWebfront.NativePath;
+            NativePageRegistration.Add(manager.GetPageList(), "ServerPulse", ServerPulseWebfront.NativePath, "ph-chart-line-up");
         Console.WriteLine($"[{Name}] by {Author} loaded. Version: {Version}");
         Console.WriteLine($"[{Name}] analytics enabled: {_config.Enabled}; webfront: {_config.EnableWebfrontDashboard}; player guidance: {_config.PlayerGuidance.Enabled}; timezone: {AnalyticsTime.ConfigurationLabel}");
     }

@@ -7,10 +7,12 @@ The `feature/native-web-bundle` branch moves the ServerPulse workspace from a le
 - IW4MAdmin's page list now supplies the **ServerPulse** administrator sidebar entry.
 - The route reads the logged-in user's permission claims before rendering.
 - Overview and detail links remain under `/serverpulse` with their existing query parameters.
+- Route and query changes reload the Razor page state during enhanced navigation, so sidebar links and drill-downs do not require a browser refresh.
+- The bundle registers the `ph-chart-line-up` sidebar icon when the host exposes icon metadata.
 - Bundle-owned responsive layout CSS is shipped in `wwwroot` and scoped by the host.
 - Analytics collection, ServerPulse data, guidance, DemosToDiscord integration and configuration are unchanged.
 
-The Razor page deliberately calls the established dashboard renderer during this first migration stage. That protects the current analytics behaviour and visual output while later work can split each dashboard view into smaller interactive Razor components.
+The Razor page deliberately calls the established dashboard renderer during this migration stage. That protects the current analytics behaviour while the component owns native routing, permission checks, loading states and responsive host-themed presentation.
 
 ## Build and install
 

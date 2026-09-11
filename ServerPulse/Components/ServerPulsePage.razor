@@ -36,8 +36,14 @@ else
     private string _markup = string.Empty;
     private string? _error;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
+        _loading = true;
+        _authorised = false;
+        _available = false;
+        _markup = string.Empty;
+        _error = null;
+
         var state = AuthenticationStateTask is null ? null : await AuthenticationStateTask;
         _authorised = NativeWebSupport.HasPermission(state?.User, Config.WebfrontMinimumPermission);
         _available = Config.Enabled && Config.EnableWebfrontDashboard;

@@ -97,7 +97,7 @@ public sealed class ServerPulseWebfront : IDisposable
 
         var builder = new StringBuilder();
         builder.Append("<section class=\"rounded-xl border border-line bg-surface p-5 shadow-sm md:p-6\"><div class=\"flex flex-col gap-4 md:flex-row md:items-center md:justify-between\"><div><div class=\"text-xs font-semibold uppercase tracking-wider text-primary\">Server intelligence</div><h2 class=\"mt-1 text-2xl font-bold text-foreground\">ServerPulse</h2><p class=\"mt-1 max-w-3xl text-sm text-muted\">See where players join, what keeps them playing and what they are telling you.</p></div>")
-            .Append($"<a data-enhance-nav=\"false\" href=\"{Url("overview", days)}\" class=\"inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-hover\"><i class=\"ph ph-arrow-clockwise\"></i>Refresh</a></div></section>")
+            .Append($"<a href=\"{Url("overview", days)}\" class=\"inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm font-medium text-foreground hover:bg-surface-hover\"><i class=\"ph ph-arrow-clockwise\"></i>Refresh</a></div></section>")
             .Append("<section class=\"sp-status-grid\">")
             .Append(StatusCard("Online now", online, "Human players across monitored servers", "ph-users-three", "text-emerald-400", "servers", days))
             .Append(StatusCard("Unique players", unique, PeriodLabel(days), "ph-identification-card", "text-primary", "servers", days))
@@ -114,7 +114,7 @@ public sealed class ServerPulseWebfront : IDisposable
             .Append(ExploreCard("Action plan", "Prioritised opportunities backed by sample sizes.", $"{actionCount:N0} current actions", "ph-lightbulb", "actions", days))
             .Append("</div></section>")
             .Append(ActionsPreview(snapshot, from, days))
-            .Append($"<section class=\"flex flex-col gap-3 rounded-xl border border-line bg-surface px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between\"><div class=\"flex items-center gap-3\"><div class=\"flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-surface-alt\"><i class=\"ph ph-heartbeat text-xl {(openIncidents == 0 && snapshot.LastError is null ? "text-emerald-400" : "text-amber-400")}\"></i></div><div><h3 class=\"font-semibold text-foreground\">Data health</h3><p class=\"text-sm text-muted\">{(openIncidents == 0 && snapshot.LastError is null ? "Collection and storage are healthy." : $"{openIncidents:N0} open incident(s) or storage issue(s) need attention.")}</p></div></div><a data-enhance-nav=\"false\" href=\"{Url("health", days)}\" class=\"text-sm font-medium text-primary hover:underline\">Review collection <i class=\"ph ph-arrow-right\"></i></a></section>");
+            .Append($"<section class=\"flex flex-col gap-3 rounded-xl border border-line bg-surface px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between\"><div class=\"flex items-center gap-3\"><div class=\"flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-surface-alt\"><i class=\"ph ph-heartbeat text-xl {(openIncidents == 0 && snapshot.LastError is null ? "text-emerald-400" : "text-amber-400")}\"></i></div><div><h3 class=\"font-semibold text-foreground\">Data health</h3><p class=\"text-sm text-muted\">{(openIncidents == 0 && snapshot.LastError is null ? "Collection and storage are healthy." : $"{openIncidents:N0} open incident(s) or storage issue(s) need attention.")}</p></div></div><a href=\"{Url("health", days)}\" class=\"text-sm font-medium text-primary hover:underline\">Review collection <i class=\"ph ph-arrow-right\"></i></a></section>");
         return builder.ToString();
     }
 
@@ -328,7 +328,7 @@ public sealed class ServerPulseWebfront : IDisposable
         foreach (var server in servers)
             builder.Append($"<option value=\"{E(server.ServerId)}\"{(server.ServerId.Equals(selectedServer, StringComparison.OrdinalIgnoreCase) ? " selected" : string.Empty)}>{E(server.ServerName)}</option>");
         builder.Append("</select></label><div class=\"flex items-end gap-2\"><button class=\"flex-1 rounded-lg bg-action-primary px-4 py-2 text-sm font-medium text-white hover:bg-action-primary-hover\" type=\"submit\"><i class=\"ph ph-funnel\"></i> Apply</button>")
-            .Append($"<a data-enhance-nav=\"false\" href=\"{Url("chat", days)}\" class=\"rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-muted hover:bg-surface-hover\">Clear</a></div></form></section>")
+            .Append($"<a href=\"{Url("chat", days)}\" class=\"rounded-lg border border-line bg-surface-alt px-3 py-2 text-sm text-muted hover:bg-surface-hover\">Clear</a></div></form></section>")
             .Append("<section class=\"overflow-hidden rounded-xl border border-line bg-surface shadow-sm\"><div class=\"border-b border-line px-5 py-4\"><h3 class=\"font-semibold text-foreground\">What players actually said</h3><p class=\"mt-1 text-sm text-muted\">Matched, redacted excerpts with the server and rotation context captured at the time.</p></div><div class=\"divide-y divide-line\">");
         if (visible.Count == 0)
             builder.Append("<div class=\"px-5 py-12 text-center text-sm text-muted\">No retained excerpts match these filters. Counts above may include older count-only signals.</div>");
@@ -357,7 +357,7 @@ public sealed class ServerPulseWebfront : IDisposable
         {
             var color = item.Severity == "High" ? "red" : item.Severity == "Medium" ? "amber" : "green";
             var destination = ActionDestination(item);
-            builder.Append($"<article class=\"bg-surface p-5\"><div class=\"flex items-center justify-between gap-3\">{Badge(item.Severity, color)}<span class=\"text-xs text-muted\">{item.Confidence:N0}% confidence · sample {item.SampleSize:N0}</span></div><h4 class=\"mt-3 text-base font-semibold text-foreground\">{E(item.Title)}</h4><p class=\"mt-2 text-sm leading-relaxed text-muted\">{E(item.Detail)}</p><div class=\"mt-4 rounded-lg border border-line bg-surface-alt/25 p-3 text-sm text-foreground\"><strong>Next step:</strong> {E(item.Action)}</div><a data-enhance-nav=\"false\" href=\"{Url(destination, DaysFrom(from))}\" class=\"mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline\">Inspect the evidence <i class=\"ph ph-arrow-right\"></i></a></article>");
+            builder.Append($"<article class=\"bg-surface p-5\"><div class=\"flex items-center justify-between gap-3\">{Badge(item.Severity, color)}<span class=\"text-xs text-muted\">{item.Confidence:N0}% confidence · sample {item.SampleSize:N0}</span></div><h4 class=\"mt-3 text-base font-semibold text-foreground\">{E(item.Title)}</h4><p class=\"mt-2 text-sm leading-relaxed text-muted\">{E(item.Detail)}</p><div class=\"mt-4 rounded-lg border border-line bg-surface-alt/25 p-3 text-sm text-foreground\"><strong>Next step:</strong> {E(item.Action)}</div><a href=\"{Url(destination, DaysFrom(from))}\" class=\"mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline\">Inspect the evidence <i class=\"ph ph-arrow-right\"></i></a></article>");
         }
         return builder.Append("</div></section>").ToString();
     }
@@ -526,9 +526,9 @@ public sealed class ServerPulseWebfront : IDisposable
     {
         var section = Sections[view];
         var builder = new StringBuilder("<section class=\"rounded-xl border border-line bg-surface p-5 shadow-sm\"><div class=\"flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between\"><div class=\"flex items-start gap-3\">")
-            .Append($"<a data-enhance-nav=\"false\" href=\"{Url("overview", days)}\" class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-alt text-muted hover:bg-surface-hover hover:text-foreground\" title=\"Back to overview\"><i class=\"ph ph-arrow-left\"></i></a><div><div class=\"flex items-center gap-2\"><i class=\"ph {E(section.Icon)} text-xl text-primary\"></i><h2 class=\"text-xl font-bold text-foreground\">{E(section.Title)}</h2></div><p class=\"mt-1 text-sm text-muted\">{E(section.Description)}</p></div></div><div class=\"flex flex-wrap gap-2\">");
+            .Append($"<a href=\"{Url("overview", days)}\" class=\"flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-surface-alt text-muted hover:bg-surface-hover hover:text-foreground\" title=\"Back to overview\"><i class=\"ph ph-arrow-left\"></i></a><div><div class=\"flex items-center gap-2\"><i class=\"ph {E(section.Icon)} text-xl text-primary\"></i><h2 class=\"text-xl font-bold text-foreground\">{E(section.Title)}</h2></div><p class=\"mt-1 text-sm text-muted\">{E(section.Description)}</p></div></div><div class=\"flex flex-wrap gap-2\">");
         foreach (var value in new[] { 1, 7, 30, 90 })
-            builder.Append($"<a data-enhance-nav=\"false\" href=\"{Url(view, value)}\" class=\"rounded-lg border px-3 py-2 text-sm font-medium {(days == value ? "border-primary bg-primary/10 text-primary" : "border-line bg-surface-alt text-muted hover:text-foreground")}\">{(value == 1 ? "24 hours" : $"{value} days")}</a>");
+            builder.Append($"<a href=\"{Url(view, value)}\" class=\"rounded-lg border px-3 py-2 text-sm font-medium {(days == value ? "border-primary bg-primary/10 text-primary" : "border-line bg-surface-alt text-muted hover:text-foreground")}\">{(value == 1 ? "24 hours" : $"{value} days")}</a>");
         return builder.Append("</div></div></section>").ToString();
     }
 
@@ -538,11 +538,11 @@ public sealed class ServerPulseWebfront : IDisposable
         if (values.Count == 0)
             return string.Empty;
         var builder = new StringBuilder("<section class=\"overflow-hidden rounded-xl border border-line bg-surface shadow-sm\"><div class=\"flex items-center justify-between gap-3 border-b border-line px-5 py-4\"><div><h3 class=\"font-semibold text-foreground\">What deserves attention</h3><p class=\"mt-1 text-sm text-muted\">The strongest evidence-backed actions in this period.</p></div>")
-            .Append($"<a data-enhance-nav=\"false\" href=\"{Url("actions", days)}\" class=\"text-sm font-medium text-primary hover:underline\">View action plan</a></div><div class=\"sp-explore-grid\">");
+            .Append($"<a href=\"{Url("actions", days)}\" class=\"text-sm font-medium text-primary hover:underline\">View action plan</a></div><div class=\"sp-explore-grid\">");
         foreach (var item in values)
         {
             var color = item.Severity == "High" ? "red" : item.Severity == "Medium" ? "amber" : "green";
-            builder.Append($"<a data-enhance-nav=\"false\" href=\"{Url(ActionDestination(item), days)}\" class=\"group bg-surface p-5 hover:bg-surface-hover/30\"><div class=\"flex items-center justify-between gap-3\">{Badge(item.Severity, color)}<span class=\"text-xs text-muted\">{item.Confidence:N0}%</span></div><h4 class=\"mt-3 font-semibold text-foreground group-hover:text-primary\">{E(item.Title)}</h4><p class=\"mt-2 line-clamp-2 text-sm text-muted\">{E(item.Detail)}</p></a>");
+            builder.Append($"<a href=\"{Url(ActionDestination(item), days)}\" class=\"group bg-surface p-5 hover:bg-surface-hover/30\"><div class=\"flex items-center justify-between gap-3\">{Badge(item.Severity, color)}<span class=\"text-xs text-muted\">{item.Confidence:N0}%</span></div><h4 class=\"mt-3 font-semibold text-foreground group-hover:text-primary\">{E(item.Title)}</h4><p class=\"mt-2 line-clamp-2 text-sm text-muted\">{E(item.Detail)}</p></a>");
         }
         return builder.Append("</div></section>").ToString();
     }
@@ -640,7 +640,7 @@ public sealed class ServerPulseWebfront : IDisposable
     }
 
     private static string StatusCard(string label, object value, string detail, string icon, string color, string destination, int days) => $"""
-        <a data-enhance-nav="false" href="{Url(destination, days)}" class="group flex min-h-[5.25rem] items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-sm hover:border-primary/40 hover:bg-surface-hover/20">
+        <a href="{Url(destination, days)}" class="group flex min-h-[5.25rem] items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-sm hover:border-primary/40 hover:bg-surface-hover/20">
           <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-alt"><i class="ph {E(icon)} text-xl {E(color)}"></i></span>
           <span class="min-w-0"><span class="block text-xl font-bold text-foreground">{E(value)}</span><span class="block text-sm font-semibold text-foreground">{E(label)}</span><span class="block truncate text-xs text-muted">{E(detail)}</span></span>
           <i class="ph ph-caret-right ml-auto text-muted group-hover:text-primary"></i>
@@ -655,7 +655,7 @@ public sealed class ServerPulseWebfront : IDisposable
         """;
 
     private static string ExploreCard(string title, string question, string value, string icon, string destination, int days) => $"""
-        <a data-enhance-nav="false" href="{Url(destination, days)}" class="group bg-surface p-5 hover:bg-surface-hover/30">
+        <a href="{Url(destination, days)}" class="group bg-surface p-5 hover:bg-surface-hover/30">
           <div class="flex items-start justify-between gap-3"><span class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10"><i class="ph {E(icon)} text-xl text-primary"></i></span><i class="ph ph-arrow-right text-muted group-hover:text-primary"></i></div>
           <h4 class="mt-4 font-semibold text-foreground group-hover:text-primary">{E(title)}</h4><p class="mt-1 text-sm text-muted">{E(question)}</p><div class="mt-3 text-xs font-medium text-muted">{E(value)}</div>
         </a>
@@ -665,7 +665,7 @@ public sealed class ServerPulseWebfront : IDisposable
     {
         var builder = new StringBuilder($"<section class=\"overflow-x-auto rounded-xl border border-line bg-surface px-4 py-3 shadow-sm\"><div class=\"flex min-w-max items-center gap-2\"><span class=\"mr-2 text-xs font-semibold uppercase tracking-wide text-muted\">{E(title)}</span>");
         foreach (var item in values)
-            builder.Append($"<a data-enhance-nav=\"false\" href=\"{Url("maps", days, $"{key}={WebUtility.UrlEncode(item.Value)}")}\" class=\"rounded-lg px-3 py-2 text-sm font-medium {(active == item.Value ? "bg-action-primary text-white" : "bg-surface-alt text-muted hover:text-foreground")}\">{E(item.Label)} <span class=\"ml-1 opacity-75\">{item.Count:N0}</span></a>");
+            builder.Append($"<a href=\"{Url("maps", days, $"{key}={WebUtility.UrlEncode(item.Value)}")}\" class=\"rounded-lg px-3 py-2 text-sm font-medium {(active == item.Value ? "bg-action-primary text-white" : "bg-surface-alt text-muted hover:text-foreground")}\">{E(item.Label)} <span class=\"ml-1 opacity-75\">{item.Count:N0}</span></a>");
         return builder.Append("</div></section>").ToString();
     }
 
@@ -673,9 +673,9 @@ public sealed class ServerPulseWebfront : IDisposable
     {
         if (pages <= 1) return string.Empty;
         var builder = new StringBuilder("<nav class=\"flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 shadow-sm\" aria-label=\"Pagination\">")
-            .Append(page > 1 ? $"<a data-enhance-nav=\"false\" href=\"{Url(view, days, $"{extra}&page={page - 1}")}\" class=\"text-sm font-medium text-primary hover:underline\"><i class=\"ph ph-arrow-left\"></i> Previous</a>" : "<span></span>")
+            .Append(page > 1 ? $"<a href=\"{Url(view, days, $"{extra}&page={page - 1}")}\" class=\"text-sm font-medium text-primary hover:underline\"><i class=\"ph ph-arrow-left\"></i> Previous</a>" : "<span></span>")
             .Append($"<span class=\"text-sm text-muted\">Page {page:N0} of {pages:N0}</span>")
-            .Append(page < pages ? $"<a data-enhance-nav=\"false\" href=\"{Url(view, days, $"{extra}&page={page + 1}")}\" class=\"text-sm font-medium text-primary hover:underline\">Next <i class=\"ph ph-arrow-right\"></i></a>" : "<span></span>");
+            .Append(page < pages ? $"<a href=\"{Url(view, days, $"{extra}&page={page + 1}")}\" class=\"text-sm font-medium text-primary hover:underline\">Next <i class=\"ph ph-arrow-right\"></i></a>" : "<span></span>");
         return builder.Append("</nav>").ToString();
     }
 

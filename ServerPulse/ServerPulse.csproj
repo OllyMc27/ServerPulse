@@ -7,7 +7,7 @@
     <LangVersion>Latest</LangVersion>
     <Configurations>Debug;Release;Prerelease</Configurations>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <Authors>OllyMc27</Authors>
     <IW4MAdminBundle>true</IW4MAdminBundle>
     <IW4MAdminBundleId>ServerPulse</IW4MAdminBundleId>
